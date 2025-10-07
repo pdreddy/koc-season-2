@@ -83,19 +83,42 @@
     .tools{ display:flex; gap:.5rem; flex-wrap:wrap; }
 
     .match-form{
-      display:grid; grid-template-columns:1fr auto 1fr; gap:1rem; align-items:start; margin-top:.25rem;
+      display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:1rem; align-items:start; margin-top:.25rem;
     }
     .team-input{
       display:flex; flex-direction:column; gap:.6rem; background:#fff; padding:1rem; border-radius:10px; border:2px solid var(--ring);
     }
     .input-label{ font-weight:800; text-align:center; }
-    .select-input,.number-input{
+    .select-input,.number-input,.text-input{
       padding:.7rem; border:2px solid var(--ring); border-radius:8px;
     }
-    .select-input:focus,.number-input:focus{ outline:none; border-color:var(--accent); }
+    .select-input:focus,.number-input:focus,.text-input:focus{ outline:none; border-color:var(--accent); }
     .inline{ display:flex; gap:.5rem; align-items:center; justify-content:space-between; }
 
     .legend{ color:var(--muted); font-size:.9rem; margin-top:.5rem; text-align:center; }
+
+    .line-editor{
+      background:#fff; border-radius:12px; border:2px dashed var(--accent); padding:1rem; display:flex; flex-direction:column; gap:.75rem;
+    }
+    .line-header{ display:flex; justify-content:space-between; align-items:center; gap:.75rem; flex-wrap:wrap; }
+    .line-actions{ display:flex; gap:.5rem; flex-wrap:wrap; }
+    .line-list{ display:flex; flex-direction:column; gap:.6rem; }
+    .line-row{ display:grid; grid-template-columns: minmax(160px,1fr) repeat(2, minmax(70px,90px)) auto; gap:.5rem; align-items:center; }
+    .line-row .text-input{ font-weight:600; }
+    .line-row .number-input{ text-align:center; }
+    .line-remove{ border:0; background:transparent; color:#ef4444; font-size:1.1rem; cursor:pointer; padding:.2rem .4rem; }
+    .line-remove:hover{ color:#b91c1c; }
+    .line-row span.sep{ text-align:center; font-weight:700; }
+    .line-hint{ color:var(--muted); font-size:.85rem; }
+    .dreambreaker{ display:flex; flex-direction:column; gap:.5rem; }
+    .dreambreaker-toggle{ display:flex; align-items:center; gap:.5rem; font-weight:600; }
+    .dreambreaker-fields{ display:grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap:.6rem; }
+    .dreambreaker-fields .number-input{ width:100%; }
+    .dreambreaker-note{ color:var(--muted); font-size:.85rem; }
+    .history-table details{ color:var(--muted); }
+    .history-table details summary{ cursor:pointer; color:#2563eb; font-weight:600; }
+    .history-table details[open]{ padding-top:.35rem; }
+    .history-table details[open] summary{ margin-bottom:.25rem; }
 
     .form-actions{ display:flex; gap:.6rem; justify-content:center; flex-wrap:wrap; margin-top:1rem; }
     .hidden{ display:none; }
@@ -183,27 +206,43 @@
         <select id="team1Name" class="select-input" required>
           <option value="">Select Team 1</option>
         </select>
-        <div class="inline">
-          <label>Sets Won</label>
-          <input type="number" id="team1Sets" placeholder="0–5" min="0" max="5" class="number-input" required />
-        </div>
       </div>
-
-      <div class="inline" style="align-self:center; font-weight:900; font-size:1.2rem;">VS</div>
-
       <div class="team-input">
         <label class="input-label">Team 2</label>
         <select id="team2Name" class="select-input" required>
           <option value="">Select Team 2</option>
         </select>
-        <div class="inline">
-          <label>Sets Won</label>
-          <input type="number" id="team2Sets" placeholder="0–5" min="0" max="5" class="number-input" required />
-        </div>
       </div>
     </div>
 
-    <p class="legend">Winner (≥3 sets) gets <strong>2 points</strong>. Loser gets <strong>0</strong>. Total sets must be between <strong>3</strong> and <strong>5</strong>.</p>
+    <div class="line-editor" aria-labelledby="courtLabel">
+      <div class="line-header">
+        <div id="courtLabel"><strong>Court Breakdown</strong> (enter games won per court)</div>
+        <div class="line-actions">
+          <button type="button" class="btn ghost" id="resetLinesBtn">Reset Courts</button>
+          <button type="button" class="btn ghost" id="addLineBtn">+ Add Court</button>
+        </div>
+      </div>
+      <div id="lineContainer" class="line-list" aria-live="polite"></div>
+      <p class="line-hint">Leave courts you didn't play empty or remove them. Games should include tiebreak points (e.g. 7-6 counts as 7).</p>
+    </div>
+
+    <div class="dreambreaker">
+      <label class="dreambreaker-toggle"><input type="checkbox" id="dreambreakerToggle" /> Dreambreaker played</label>
+      <div id="dreambreakerFields" class="dreambreaker-fields hidden">
+        <div>
+          <label>Dreambreaker Points (Team 1)</label>
+          <input type="number" id="dreambreakerTeam1" class="number-input" min="0" max="20" step="1" />
+        </div>
+        <div>
+          <label>Dreambreaker Points (Team 2)</label>
+          <input type="number" id="dreambreakerTeam2" class="number-input" min="0" max="20" step="1" />
+        </div>
+      </div>
+      <p class="dreambreaker-note">Use the dreambreaker fields only if total games are tied. Winner still earns <strong>1 match point</strong>.</p>
+    </div>
+
+    <p class="legend">Universal Tennis Team format: total match winner is determined by <strong>games won across all courts</strong>. Enter each court's score to auto-calculate totals.</p>
 
     <div class="form-actions">
       <button class="btn success" id="addBtn">Save Result</button>
@@ -222,16 +261,20 @@
           <th>Rank</th>
           <th>Team</th>
           <th>Matches</th>
-          <th>Points</th>
-          <th>Sets Won</th>
+          <th>Match Wins</th>
+          <th>Match Losses</th>
+          <th>Games Won</th>
+          <th>Games Lost</th>
+          <th>Game Diff</th>
+          <th>Match Points</th>
         </tr>
         </thead>
         <tbody id="standingsBody">
-        <tr><td colspan="5" class="center-cell" style="color:var(--muted);">No results yet. Add a match to see standings.</td></tr>
+        <tr><td colspan="9" class="center-cell" style="color:var(--muted);">No results yet. Add a match to see standings.</td></tr>
         </tbody>
       </table>
     </div>
-    <p class="hint">Sorted by Points → Sets (playoff top-4 highlighted).</p>
+    <p class="hint">Sorted by Match Points → Game Differential → Games Won (top 4 highlighted).</p>
   </section>
 
   <!-- Match History -->
@@ -243,13 +286,14 @@
         <tr>
           <th>#</th>
           <th>Teams</th>
-          <th>Sets</th>
+          <th>Games</th>
           <th>Winner</th>
+          <th>Breakdown</th>
           <th>Date/Time</th>
         </tr>
         </thead>
         <tbody id="historyBody">
-        <tr><td colspan="5" class="center-cell" style="color:var(--muted);">No matches recorded.</td></tr>
+        <tr><td colspan="6" class="center-cell" style="color:var(--muted);">No matches recorded.</td></tr>
         </tbody>
       </table>
     </div>
@@ -272,14 +316,95 @@
     "Mega Lions",
     "Court Conquerors"
   ];
+  const DEFAULT_LINES = [
+    'Line 1 Singles',
+    'Line 2 Singles',
+    'Line 3 Singles',
+    'Line 4 Singles',
+    'Line 1 Doubles'
+  ];
+
+  const HTML_ESCAPE_LOOKUP = { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' };
+  const escapeHTML = (value='') => String(value).replace(/[&<>"']/g, ch => HTML_ESCAPE_LOOKUP[ch] || ch);
+
+  function sanitizeLines(list){
+    if(!Array.isArray(list)) return [];
+    const clean = [];
+    list.forEach((entry, idx) => {
+      if(!entry) return;
+      const label = typeof entry.label === 'string' ? entry.label.trim() : '';
+      const g1 = Number(entry.g1);
+      const g2 = Number(entry.g2);
+      if(!Number.isInteger(g1) || !Number.isInteger(g2)) return;
+      if(g1 < 0 || g2 < 0 || g1 > 60 || g2 > 60) return;
+      clean.push({ label: label || `Court ${clean.length + 1}`, g1, g2 });
+    });
+    return clean;
+  }
+
+  function sanitizeDreambreaker(db){
+    if(!db) return null;
+    const g1 = Number(db.g1 ?? db.team1 ?? db.t1 ?? db.points1 ?? db.p1);
+    const g2 = Number(db.g2 ?? db.team2 ?? db.t2 ?? db.points2 ?? db.p2);
+    if(!Number.isInteger(g1) || !Number.isInteger(g2)) return null;
+    if(g1 < 0 || g2 < 0 || g1 > 40 || g2 > 40) return null;
+    if(g1 === 0 && g2 === 0) return null;
+    return { g1, g2 };
+  }
+
+  function upgradeMatch(m){
+    if(!m || !m.t1 || !m.t2) return null;
+    const lines = sanitizeLines(m.lines);
+    let g1 = Number(m.g1);
+    let g2 = Number(m.g2);
+
+    if(!Number.isFinite(g1) || !Number.isFinite(g2)){
+      if(lines.length){
+        g1 = lines.reduce((sum,row)=>sum+row.g1,0);
+        g2 = lines.reduce((sum,row)=>sum+row.g2,0);
+      } else if(typeof m.s1 !== 'undefined' && typeof m.s2 !== 'undefined'){
+        g1 = Number(m.s1);
+        g2 = Number(m.s2);
+      }
+    }
+
+    if(!Number.isFinite(g1) || !Number.isFinite(g2)) return null;
+    g1 = Math.round(g1);
+    g2 = Math.round(g2);
+    if(g1 < 0 || g2 < 0 || g1 > 120 || g2 > 120) return null;
+
+    if(lines.length){
+      const sum1 = lines.reduce((sum,row)=>sum+row.g1,0);
+      const sum2 = lines.reduce((sum,row)=>sum+row.g2,0);
+      g1 = sum1;
+      g2 = sum2;
+    }
+
+    const dreambreaker = sanitizeDreambreaker(m.dreambreaker);
+    const derivedWin = g1 === g2 ? null : (g1 > g2 ? m.t1 : m.t2);
+    let win = (m.win === m.t1 || m.win === m.t2) ? m.win : derivedWin;
+    if(!win && dreambreaker && dreambreaker.g1 !== dreambreaker.g2){
+      win = dreambreaker.g1 > dreambreaker.g2 ? m.t1 : m.t2;
+    }
+
+    const tsNumber = Number(m.ts);
+    const ts = Number.isFinite(tsNumber) ? tsNumber : Date.now();
+    const upgraded = { t1:m.t1, t2:m.t2, g1, g2, win, ts };
+    if(lines.length) upgraded.lines = lines;
+    if(dreambreaker && dreambreaker.g1 !== dreambreaker.g2) upgraded.dreambreaker = dreambreaker;
+    return upgraded;
+  }
 
   function loadMatches(){
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+    try {
+      const raw = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+      return raw.map(upgradeMatch).filter(Boolean);
+    }
     catch { return []; }
   }
   function saveMatches(list){ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
 
-  let matches = loadMatches(); // [{t1,t2,s1,s2,ts,win}]
+  let matches = loadMatches(); // [{t1,t2,g1,g2,ts,win}]
 
   /* ==========
      UI: Nav (mobile)
@@ -323,17 +448,157 @@
   fillTeams();
 
   /* ==========
-     Validation helpers (Best-of-5)
+     Court editor helpers
      ========== */
-  function validateSets(a,b){
-    const s1 = Number(a), s2 = Number(b);
-    if(Number.isNaN(s1)||Number.isNaN(s2)) return { ok:false, msg:'Enter numeric sets for both teams.' };
-    if(s1<0||s2<0||s1>5||s2>5) return { ok:false, msg:'Sets must be between 0 and 5.' };
-    const total = s1+s2;
-    if(total<3 || total>5) return { ok:false, msg:'Total sets must be between 3 and 5.' };
-    if(s1===s2) return { ok:false, msg:'No ties allowed in best-of-5. One team must have more sets.' };
-    if(s1<3 && s2<3) return { ok:false, msg:'Winner must have at least 3 sets.' };
-    return { ok:true };
+  const lineContainer = document.getElementById('lineContainer');
+  const addLineBtn = document.getElementById('addLineBtn');
+  const resetLinesBtn = document.getElementById('resetLinesBtn');
+  const dreambreakerToggle = document.getElementById('dreambreakerToggle');
+  const dreambreakerFields = document.getElementById('dreambreakerFields');
+  const dreambreakerTeam1 = document.getElementById('dreambreakerTeam1');
+  const dreambreakerTeam2 = document.getElementById('dreambreakerTeam2');
+
+  function makeLineRow(label='', g1='', g2=''){
+    const row = document.createElement('div');
+    row.className = 'line-row';
+
+    const labelInput = document.createElement('input');
+    labelInput.type = 'text';
+    labelInput.className = 'text-input line-label';
+    labelInput.placeholder = 'Court name';
+    labelInput.value = label;
+
+    const team1Input = document.createElement('input');
+    team1Input.type = 'number';
+    team1Input.className = 'number-input line-games line-games-1';
+    team1Input.min = '0';
+    team1Input.max = '30';
+    team1Input.step = '1';
+    team1Input.value = g1;
+    team1Input.setAttribute('aria-label', 'Team 1 games');
+
+    const team2Input = document.createElement('input');
+    team2Input.type = 'number';
+    team2Input.className = 'number-input line-games line-games-2';
+    team2Input.min = '0';
+    team2Input.max = '30';
+    team2Input.step = '1';
+    team2Input.value = g2;
+    team2Input.setAttribute('aria-label', 'Team 2 games');
+
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'line-remove';
+    removeBtn.title = 'Remove court';
+    removeBtn.textContent = '✕';
+    removeBtn.addEventListener('click', () => {
+      row.remove();
+      if(!lineContainer.children.length){
+        addDefaultLines();
+      }
+    });
+
+    row.append(labelInput, team1Input, team2Input, removeBtn);
+    return row;
+  }
+
+  function addLine(label=''){
+    const cleanLabel = label || `Court ${lineContainer.children.length + 1}`;
+    const row = makeLineRow(cleanLabel, '', '');
+    lineContainer.appendChild(row);
+  }
+
+  function addDefaultLines(){
+    lineContainer.innerHTML = '';
+    DEFAULT_LINES.forEach(l => {
+      lineContainer.appendChild(makeLineRow(l, '', ''));
+    });
+  }
+
+  function clearLineScores(){
+    Array.from(lineContainer.querySelectorAll('.line-row')).forEach(row => {
+      row.querySelector('.line-games-1').value = '';
+      row.querySelector('.line-games-2').value = '';
+    });
+  }
+
+  addDefaultLines();
+
+  addLineBtn.addEventListener('click', () => {
+    const idx = lineContainer.children.length + 1;
+    lineContainer.appendChild(makeLineRow(`Court ${idx}`, '', ''));
+  });
+  resetLinesBtn.addEventListener('click', () => {
+    addDefaultLines();
+  });
+
+  dreambreakerToggle.addEventListener('change', () => {
+    const on = dreambreakerToggle.checked;
+    dreambreakerFields.classList.toggle('hidden', !on);
+    if(!on){
+      dreambreakerTeam1.value = '';
+      dreambreakerTeam2.value = '';
+    }
+  });
+
+  function collectCourtData(){
+    const rows = Array.from(lineContainer.querySelectorAll('.line-row'));
+    const lines = [];
+    let total1 = 0, total2 = 0;
+    for(let i=0; i<rows.length; i++){
+      const row = rows[i];
+      const labelInput = row.querySelector('.line-label');
+      const g1Input = row.querySelector('.line-games-1');
+      const g2Input = row.querySelector('.line-games-2');
+      const label = (labelInput.value || '').trim() || `Court ${i+1}`;
+      const g1Raw = g1Input.value.trim();
+      const g2Raw = g2Input.value.trim();
+      if(g1Raw === '' && g2Raw === '') continue;
+      if(g1Raw === '' || g2Raw === ''){
+        return { ok:false, msg:`Enter games for both teams on ${label}.` };
+      }
+      const g1 = Number(g1Raw);
+      const g2 = Number(g2Raw);
+      if(!Number.isInteger(g1) || !Number.isInteger(g2)){
+        return { ok:false, msg:`Games on ${label} must be whole numbers.` };
+      }
+      if(g1 < 0 || g2 < 0){
+        return { ok:false, msg:`Games on ${label} cannot be negative.` };
+      }
+      if(g1 > 30 || g2 > 30){
+        return { ok:false, msg:`Games on ${label} look unusually high.` };
+      }
+      lines.push({ label, g1, g2 });
+      total1 += g1;
+      total2 += g2;
+    }
+    if(lines.length === 0){
+      return { ok:false, msg:'Enter at least one court score.' };
+    }
+    return { ok:true, lines, total1, total2 };
+  }
+
+  function collectDreambreaker(){
+    if(!dreambreakerToggle.checked) return { ok:true, dreambreaker:null };
+    const a = dreambreakerTeam1.value.trim();
+    const b = dreambreakerTeam2.value.trim();
+    if(a === '' || b === ''){
+      return { ok:false, msg:'Enter dreambreaker points for both teams.' };
+    }
+    const g1 = Number(a), g2 = Number(b);
+    if(!Number.isInteger(g1) || !Number.isInteger(g2)){
+      return { ok:false, msg:'Dreambreaker points must be whole numbers.' };
+    }
+    if(g1 < 0 || g2 < 0){
+      return { ok:false, msg:'Dreambreaker points cannot be negative.' };
+    }
+    if(g1 === g2){
+      return { ok:false, msg:'Dreambreaker cannot end in a tie.' };
+    }
+    if(g1 > 30 || g2 > 30){
+      return { ok:false, msg:'Dreambreaker points look too high.' };
+    }
+    return { ok:true, dreambreaker:{ g1, g2 } };
   }
 
   /* ==========
@@ -341,19 +606,38 @@
      ========== */
   function computeStandings(){
     const stats = {};
-    TEAMS.forEach(n => stats[n] = { team:n, matches:0, points:0, sets:0 });
+    TEAMS.forEach(n => stats[n] = {
+      team:n,
+      matches:0,
+      wins:0,
+      losses:0,
+      gamesFor:0,
+      gamesAgainst:0,
+      points:0
+    });
     for(const m of matches){
       // increment matches
       stats[m.t1].matches++; stats[m.t2].matches++;
-      // sets
-      stats[m.t1].sets += m.s1; stats[m.t2].sets += m.s2;
-      // points (2 for winner)
-      if(m.win === m.t1) stats[m.t1].points += 2;
-      else stats[m.t2].points += 2;
+      // games
+      stats[m.t1].gamesFor += m.g1; stats[m.t1].gamesAgainst += m.g2;
+      stats[m.t2].gamesFor += m.g2; stats[m.t2].gamesAgainst += m.g1;
+      if(m.win === m.t1){
+        stats[m.t1].wins++; stats[m.t2].losses++;
+        stats[m.t1].points++;
+      } else if(m.win === m.t2){
+        stats[m.t2].wins++; stats[m.t1].losses++;
+        stats[m.t2].points++;
+      }
     }
-    // sort: Points desc → Sets desc → Name asc
+    Object.values(stats).forEach(s => s.gameDiff = s.gamesFor - s.gamesAgainst);
+    // sort: Match points → Game differential → Games for → Name
     const arr = Object.values(stats)
-      .sort((a,b)=> (b.points-a.points) || (b.sets-a.sets) || a.team.localeCompare(b.team));
+      .sort((a,b)=>
+        (b.points - a.points) ||
+        (b.gameDiff - a.gameDiff) ||
+        (b.gamesFor - a.gamesFor) ||
+        a.team.localeCompare(b.team)
+      );
     return arr;
   }
 
@@ -362,7 +646,7 @@
     const rows = computeStandings();
 
     if(matches.length === 0){
-      tbody.innerHTML = '<tr><td colspan="5" class="center-cell" style="color:var(--muted);">No results yet. Add a match to see standings.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9" class="center-cell" style="color:var(--muted);">No results yet. Add a match to see standings.</td></tr>';
       return;
     }
 
@@ -371,8 +655,12 @@
         <td class="rank-cell">${i+1}</td>
         <td class="team-cell">${r.team}</td>
         <td class="center-cell">${r.matches}</td>
+        <td class="center-cell">${r.wins}</td>
+        <td class="center-cell">${r.losses}</td>
+        <td class="center-cell">${r.gamesFor}</td>
+        <td class="center-cell">${r.gamesAgainst}</td>
+        <td class="center-cell">${r.gameDiff}</td>
         <td class="points-cell">${r.points}</td>
-        <td class="center-cell">${r.sets}</td>
       </tr>
     `).join('');
   }
@@ -380,18 +668,23 @@
   function renderHistory(){
     const tbody = document.getElementById('historyBody');
     if(matches.length === 0){
-      tbody.innerHTML = '<tr><td colspan="5" class="center-cell" style="color:var(--muted);">No matches recorded.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="center-cell" style="color:var(--muted);">No matches recorded.</td></tr>';
       return;
     }
-    tbody.innerHTML = matches.map((m,idx)=>`
+    tbody.innerHTML = matches.map((m,idx)=>{
+      const breakdown = Array.isArray(m.lines) && m.lines.length
+        ? `<details><summary>Courts (${m.lines.length})${m.dreambreaker ? ' • Dreambreaker' : ''}</summary>${m.lines.map(line=>`${escapeHTML(line.label)}: ${line.g1}-${line.g2}`).join('<br>')}${m.dreambreaker ? `<br><strong>Dreambreaker:</strong> ${m.dreambreaker.g1}-${m.dreambreaker.g2}` : ''}</details>`
+        : (m.dreambreaker ? `Dreambreaker ${m.dreambreaker.g1}-${m.dreambreaker.g2}` : '—');
+      return `
       <tr>
         <td class="rank-cell">${matches.length - idx}</td>
         <td class="team-cell">${m.t1} vs ${m.t2}</td>
-        <td class="center-cell">${m.s1}-${m.s2}</td>
+        <td class="center-cell">${m.g1}-${m.g2}</td>
         <td class="points-cell">${m.win}</td>
+        <td>${breakdown}</td>
         <td class="center-cell">${new Date(m.ts).toLocaleString()}</td>
       </tr>
-    `).join('');
+    `; }).join('');
   }
 
   function refresh(){
@@ -405,30 +698,61 @@
      ========== */
   document.getElementById('addBtn').addEventListener('click', () => {
     const a = t1.value.trim(), b = t2.value.trim();
-    const s1 = Number(document.getElementById('team1Sets').value);
-    const s2 = Number(document.getElementById('team2Sets').value);
-
     if(!a || !b) return alert('Select both teams.');
     if(a === b) return alert('A team cannot play itself.');
-    const v = validateSets(s1,s2);
-    if(!v.ok) return alert('⚠️ ' + v.msg);
 
-    const win = s1 > s2 ? a : b;
-    matches.unshift({ t1:a, t2:b, s1, s2, win, ts: Date.now() });
+    const courts = collectCourtData();
+    if(!courts.ok) return alert('⚠️ ' + courts.msg);
+
+    const dream = collectDreambreaker();
+    if(!dream.ok) return alert('⚠️ ' + dream.msg);
+
+    const total1 = courts.total1;
+    const total2 = courts.total2;
+
+    let win;
+    if(total1 > total2){
+      win = a;
+    } else if(total2 > total1){
+      win = b;
+    } else {
+      if(!dream.dreambreaker) return alert('⚠️ Totals are tied. Enter the dreambreaker result.');
+      win = dream.dreambreaker.g1 > dream.dreambreaker.g2 ? a : b;
+    }
+
+    const record = {
+      t1:a,
+      t2:b,
+      g1: total1,
+      g2: total2,
+      win,
+      ts: Date.now(),
+      lines: courts.lines
+    };
+    if(dream.dreambreaker) record.dreambreaker = dream.dreambreaker;
+
+    matches.unshift(record);
 
     // Clear inputs
-    t1.value = ''; t2.value = '';
-    document.getElementById('team1Sets').value = '';
-    document.getElementById('team2Sets').value = '';
+    t1.value = '';
+    t2.value = '';
+    clearLineScores();
+    dreambreakerToggle.checked = false;
+    dreambreakerFields.classList.add('hidden');
+    dreambreakerTeam1.value = '';
+    dreambreakerTeam2.value = '';
 
     refresh();
-    alert(`✅ Saved: ${a} ${s1}-${s2} ${b}\nWinner: ${win} (2 pts)`);
+    const dreamNote = record.dreambreaker ? `\nDreambreaker: ${record.dreambreaker.g1}-${record.dreambreaker.g2}` : '';
+    alert(`✅ Saved: ${a} ${record.g1}-${record.g2} ${b}\nWinner: ${win} (+1 match point)${dreamNote}`);
   });
 
   document.getElementById('undoBtn').addEventListener('click', () => {
     if(matches.length === 0) return alert('Nothing to undo.');
     const last = matches[0];
-    if(!confirm(`Undo last match?\n${last.t1} ${last.s1}-${last.s2} ${last.t2}`)) return;
+    const courts = Array.isArray(last.lines) && last.lines.length ? '\nCourts: ' + last.lines.map(l=>`${l.label} ${l.g1}-${l.g2}`).join(', ') : '';
+    const dream = last.dreambreaker ? `\nDreambreaker ${last.dreambreaker.g1}-${last.dreambreaker.g2}` : '';
+    if(!confirm(`Undo last match?\n${last.t1} ${last.g1}-${last.g2} ${last.t2}${courts}${dream}`)) return;
     matches.shift();
     refresh();
   });
@@ -458,11 +782,14 @@
         const data = JSON.parse(reader.result);
         if(!Array.isArray(data)) throw new Error('Invalid JSON shape');
         // quick sanity check
-        for(const m of data){
-          if(!m.t1 || !m.t2 || typeof m.s1!=='number' || typeof m.s2!=='number') throw new Error('Malformed match entry');
-          if(!TEAMS.includes(m.t1) || !TEAMS.includes(m.t2)) throw new Error('Unknown team in data');
-        }
-        matches = data;
+        const upgraded = data.map(entry => {
+          const u = upgradeMatch(entry);
+          if(!u) throw new Error('Malformed match entry (invalid games)');
+          if(!TEAMS.includes(u.t1) || !TEAMS.includes(u.t2)) throw new Error('Unknown team in data');
+          if(u.win !== u.t1 && u.win !== u.t2) throw new Error('Match is missing a winner');
+          return u;
+        });
+        matches = upgraded;
         refresh();
         alert('✅ Import successful.');
       } catch(err){
