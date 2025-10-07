@@ -301,6 +301,7 @@
 </main>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
   /* ==========
@@ -317,8 +318,51 @@
   };
 
   const firebaseApp = firebase.apps && firebase.apps.length ? firebase.app() : firebase.initializeApp(firebaseConfig);
+  const auth = firebaseApp.auth();
   const database = firebaseApp.database();
   const matchesRef = database.ref('season2Matches');
+
+  let authReady = false;
+  let authPromise = null;
+  let authError = null;
+
+  function ensureAuth(){
+    if(authReady) return Promise.resolve();
+    if(authPromise) return authPromise;
+    authPromise = auth.signInAnonymously()
+      .then(() => {
+        authReady = true;
+        authError = null;
+      })
+      .catch(err => {
+        authReady = false;
+        authError = err;
+        throw err;
+      })
+      .finally(() => {
+        authPromise = null;
+      });
+    return authPromise;
+  }
+
+  ensureAuth().catch(err => {
+    console.error('Failed to authenticate with Firebase', err);
+    alert('⚠️ Unable to authenticate with Firebase. Scores will be read-only.');
+  });
+
+  async function guardWriteAccess(){
+    try {
+      await ensureAuth();
+      if(!authReady){
+        throw authError || new Error('Authentication is required.');
+      }
+      return true;
+    } catch(err){
+      console.error('Firebase authentication required before updating scores', err);
+      alert('❌ Unable to authenticate with Firebase. Scores cannot be updated right now.');
+      return false;
+    }
+  }
 
   const standingsBody = document.getElementById('standingsBody');
   const historyBody = document.getElementById('historyBody');
@@ -418,7 +462,7 @@
     return upgraded;
   }
 
-  matchesRef.on('value', snapshot => {
+  function handleSnapshot(snapshot){
     const data = snapshot.val();
     const list = [];
     if(data && typeof data === 'object'){
@@ -433,13 +477,33 @@
     matches = list.sort((a,b)=>b.ts - a.ts);
     matchesLoaded = true;
     renderAll();
-  }, error => {
+  }
+
+  async function handleMatchesError(error){
     console.error('Failed to load matches from Firebase', error);
+    if(error && error.code === 'PERMISSION_DENIED'){
+      try {
+        await ensureAuth();
+        if(authReady){
+          subscribeToMatches();
+          return;
+        }
+      } catch(authErr){
+        console.error('Firebase authentication attempt failed while retrying listener', authErr);
+      }
+    }
     matches = [];
     matchesLoaded = true;
     renderAll();
     alert('❌ Failed to load matches from server. Please try again later.');
-  });
+  }
+
+  function subscribeToMatches(){
+    matchesRef.off();
+    matchesRef.on('value', handleSnapshot, handleMatchesError);
+  }
+
+  subscribeToMatches();
 
   /* ==========
      UI: Nav (mobile)
@@ -773,6 +837,8 @@
     };
     if(dream.dreambreaker) record.dreambreaker = dream.dreambreaker;
 
+    if(!(await guardWriteAccess())) return;
+
     try {
       await matchesRef.push(record);
 
@@ -789,6 +855,10 @@
       alert(`✅ Saved: ${a} ${record.g1}-${record.g2} ${b}\nWinner: ${win} (+1 match point)${dreamNote}`);
     } catch(err){
       console.error('Failed to save match', err);
+      if(err && err.code === 'PERMISSION_DENIED'){
+        authReady = false;
+        authError = err;
+      }
       alert('❌ Failed to save match. ' + (err && err.message ? err.message : 'Please try again.'));
     }
   });
@@ -800,10 +870,16 @@
     const courts = Array.isArray(last.lines) && last.lines.length ? '\nCourts: ' + last.lines.map(l=>`${l.label} ${l.g1}-${l.g2}`).join(', ') : '';
     const dream = last.dreambreaker ? `\nDreambreaker ${last.dreambreaker.g1}-${last.dreambreaker.g2}` : '';
     if(!confirm(`Undo last match?\n${last.t1} ${last.g1}-${last.g2} ${last.t2}${courts}${dream}`)) return;
+    if(!(await guardWriteAccess())) return;
+
     try {
       await matchesRef.child(last.id).remove();
     } catch(err){
       console.error('Failed to undo match', err);
+      if(err && err.code === 'PERMISSION_DENIED'){
+        authReady = false;
+        authError = err;
+      }
       alert('❌ Failed to undo match. ' + (err && err.message ? err.message : 'Please try again.'));
     }
   });
@@ -812,10 +888,16 @@
     if(!matchesLoaded) return alert('Results are still loading.');
     if(matches.length === 0) return alert('Nothing to clear.');
     if(!confirm('Clear ALL match results?')) return;
+    if(!(await guardWriteAccess())) return;
+
     try {
       await matchesRef.remove();
     } catch(err){
       console.error('Failed to clear matches', err);
+      if(err && err.code === 'PERMISSION_DENIED'){
+        authReady = false;
+        authError = err;
+      }
       alert('❌ Failed to clear matches. ' + (err && err.message ? err.message : 'Please try again.'));
     }
   });
@@ -848,6 +930,8 @@
           const { id, ...clean } = u;
           return clean;
         });
+        if(!(await guardWriteAccess())) return;
+
         if(upgraded.length === 0){
           await matchesRef.set(null);
         } else {
@@ -861,6 +945,10 @@
         alert('✅ Import successful.');
       } catch(err){
         console.error(err);
+        if(err && err.code === 'PERMISSION_DENIED'){
+          authReady = false;
+          authError = err;
+        }
         alert('❌ Import failed: ' + err.message);
       } finally {
         e.target.value = '';
