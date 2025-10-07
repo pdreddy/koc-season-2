@@ -175,7 +175,7 @@
 <main class="container">
   <section class="page-header">
     <h1>Tournament Standings</h1>
-    <p>Live rankings and match results (stored in your browser)</p>
+    <p>Live rankings and match results (stored securely in Firebase)</p>
   </section>
 
   <!-- Access Code -->
@@ -185,7 +185,7 @@
       <input type="password" id="accessCode" placeholder="Enter access code" class="access-input" />
       <button class="btn" id="unlockBtn">Unlock Scoring</button>
     </div>
-    <p class="hint">Use access code <strong>SCORE2025</strong>. Data is saved in <em>localStorage</em>.</p>
+    <p class="hint">Use access code <strong>SCORE2025</strong>. Data is saved in <em>Firebase</em>.</p>
   </section>
 
   <!-- Scoring Form -->
@@ -300,11 +300,34 @@
   </section>
 </main>
 
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
   /* ==========
-     Storage & Teams
+     Firebase Setup & Teams
      ========== */
-  const STORAGE_KEY = 'kocS2_matches';
+  const firebaseConfig = {
+    apiKey: "AIzaSyDbO0eP52i4t3V94bEiDcl7WoKbSrrM9VA",
+    authDomain: "koc2-20fb8.firebaseapp.com",
+    databaseURL: "https://koc2-20fb8-default-rtdb.firebaseio.com",
+    projectId: "koc2-20fb8",
+    storageBucket: "koc2-20fb8.firebasestorage.app",
+    messagingSenderId: "317734341461",
+    appId: "1:317734341461:web:1bcad5a1792fac0e46bddc"
+  };
+
+  const firebaseApp = firebase.apps && firebase.apps.length ? firebase.app() : firebase.initializeApp(firebaseConfig);
+  const database = firebaseApp.database();
+  const matchesRef = database.ref('season2Matches');
+
+  const standingsBody = document.getElementById('standingsBody');
+  const historyBody = document.getElementById('historyBody');
+  standingsBody.innerHTML = '<tr><td colspan="9" class="center-cell" style="color:var(--muted);">Loading standings from Firebase…</td></tr>';
+  historyBody.innerHTML = '<tr><td colspan="6" class="center-cell" style="color:var(--muted);">Loading match history from Firebase…</td></tr>';
+
+  let matches = [];
+  let matchesLoaded = false;
+
   const TEAMS = [
     "Rally Royals",
     "Karna's Crusaders",
@@ -395,16 +418,28 @@
     return upgraded;
   }
 
-  function loadMatches(){
-    try {
-      const raw = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-      return raw.map(upgradeMatch).filter(Boolean);
+  matchesRef.on('value', snapshot => {
+    const data = snapshot.val();
+    const list = [];
+    if(data && typeof data === 'object'){
+      for(const [id, entry] of Object.entries(data)){
+        const upgraded = upgradeMatch(entry);
+        if(upgraded){
+          upgraded.id = id;
+          list.push(upgraded);
+        }
+      }
     }
-    catch { return []; }
-  }
-  function saveMatches(list){ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
-
-  let matches = loadMatches(); // [{t1,t2,g1,g2,ts,win}]
+    matches = list.sort((a,b)=>b.ts - a.ts);
+    matchesLoaded = true;
+    renderAll();
+  }, error => {
+    console.error('Failed to load matches from Firebase', error);
+    matches = [];
+    matchesLoaded = true;
+    renderAll();
+    alert('❌ Failed to load matches from server. Please try again later.');
+  });
 
   /* ==========
      UI: Nav (mobile)
@@ -642,15 +677,19 @@
   }
 
   function renderStandings(){
-    const tbody = document.getElementById('standingsBody');
-    const rows = computeStandings();
-
-    if(matches.length === 0){
-      tbody.innerHTML = '<tr><td colspan="9" class="center-cell" style="color:var(--muted);">No results yet. Add a match to see standings.</td></tr>';
+    if(!matchesLoaded){
+      standingsBody.innerHTML = '<tr><td colspan="9" class="center-cell" style="color:var(--muted);">Loading standings from Firebase…</td></tr>';
       return;
     }
 
-    tbody.innerHTML = rows.map((r,i)=>`
+    const rows = computeStandings();
+
+    if(matches.length === 0){
+      standingsBody.innerHTML = '<tr><td colspan="9" class="center-cell" style="color:var(--muted);">No results yet. Add a match to see standings.</td></tr>';
+      return;
+    }
+
+    standingsBody.innerHTML = rows.map((r,i)=>`
       <tr class="${i<4?'qualified':''}">
         <td class="rank-cell">${i+1}</td>
         <td class="team-cell">${r.team}</td>
@@ -666,12 +705,15 @@
   }
 
   function renderHistory(){
-    const tbody = document.getElementById('historyBody');
-    if(matches.length === 0){
-      tbody.innerHTML = '<tr><td colspan="6" class="center-cell" style="color:var(--muted);">No matches recorded.</td></tr>';
+    if(!matchesLoaded){
+      historyBody.innerHTML = '<tr><td colspan="6" class="center-cell" style="color:var(--muted);">Loading match history from Firebase…</td></tr>';
       return;
     }
-    tbody.innerHTML = matches.map((m,idx)=>{
+    if(matches.length === 0){
+      historyBody.innerHTML = '<tr><td colspan="6" class="center-cell" style="color:var(--muted);">No matches recorded.</td></tr>';
+      return;
+    }
+    historyBody.innerHTML = matches.map((m,idx)=>{
       const breakdown = Array.isArray(m.lines) && m.lines.length
         ? `<details><summary>Courts (${m.lines.length})${m.dreambreaker ? ' • Dreambreaker' : ''}</summary>${m.lines.map(line=>`${escapeHTML(line.label)}: ${line.g1}-${line.g2}`).join('<br>')}${m.dreambreaker ? `<br><strong>Dreambreaker:</strong> ${m.dreambreaker.g1}-${m.dreambreaker.g2}` : ''}</details>`
         : (m.dreambreaker ? `Dreambreaker ${m.dreambreaker.g1}-${m.dreambreaker.g2}` : '—');
@@ -687,8 +729,7 @@
     `; }).join('');
   }
 
-  function refresh(){
-    saveMatches(matches);
+  function renderAll(){
     renderStandings();
     renderHistory();
   }
@@ -696,7 +737,8 @@
   /* ==========
      Actions: Add / Undo / Clear / Import / Export
      ========== */
-  document.getElementById('addBtn').addEventListener('click', () => {
+  document.getElementById('addBtn').addEventListener('click', async () => {
+    if(!matchesLoaded) return alert('Please wait for existing results to load.');
     const a = t1.value.trim(), b = t2.value.trim();
     if(!a || !b) return alert('Select both teams.');
     if(a === b) return alert('A team cannot play itself.');
@@ -731,41 +773,57 @@
     };
     if(dream.dreambreaker) record.dreambreaker = dream.dreambreaker;
 
-    matches.unshift(record);
+    try {
+      await matchesRef.push(record);
 
-    // Clear inputs
-    t1.value = '';
-    t2.value = '';
-    clearLineScores();
-    dreambreakerToggle.checked = false;
-    dreambreakerFields.classList.add('hidden');
-    dreambreakerTeam1.value = '';
-    dreambreakerTeam2.value = '';
+      // Clear inputs after successful save
+      t1.value = '';
+      t2.value = '';
+      clearLineScores();
+      dreambreakerToggle.checked = false;
+      dreambreakerFields.classList.add('hidden');
+      dreambreakerTeam1.value = '';
+      dreambreakerTeam2.value = '';
 
-    refresh();
-    const dreamNote = record.dreambreaker ? `\nDreambreaker: ${record.dreambreaker.g1}-${record.dreambreaker.g2}` : '';
-    alert(`✅ Saved: ${a} ${record.g1}-${record.g2} ${b}\nWinner: ${win} (+1 match point)${dreamNote}`);
+      const dreamNote = record.dreambreaker ? `\nDreambreaker: ${record.dreambreaker.g1}-${record.dreambreaker.g2}` : '';
+      alert(`✅ Saved: ${a} ${record.g1}-${record.g2} ${b}\nWinner: ${win} (+1 match point)${dreamNote}`);
+    } catch(err){
+      console.error('Failed to save match', err);
+      alert('❌ Failed to save match. ' + (err && err.message ? err.message : 'Please try again.'));
+    }
   });
 
-  document.getElementById('undoBtn').addEventListener('click', () => {
+  document.getElementById('undoBtn').addEventListener('click', async () => {
+    if(!matchesLoaded) return alert('Results are still loading.');
     if(matches.length === 0) return alert('Nothing to undo.');
     const last = matches[0];
     const courts = Array.isArray(last.lines) && last.lines.length ? '\nCourts: ' + last.lines.map(l=>`${l.label} ${l.g1}-${l.g2}`).join(', ') : '';
     const dream = last.dreambreaker ? `\nDreambreaker ${last.dreambreaker.g1}-${last.dreambreaker.g2}` : '';
     if(!confirm(`Undo last match?\n${last.t1} ${last.g1}-${last.g2} ${last.t2}${courts}${dream}`)) return;
-    matches.shift();
-    refresh();
+    try {
+      await matchesRef.child(last.id).remove();
+    } catch(err){
+      console.error('Failed to undo match', err);
+      alert('❌ Failed to undo match. ' + (err && err.message ? err.message : 'Please try again.'));
+    }
   });
 
-  document.getElementById('clearBtn').addEventListener('click', () => {
+  document.getElementById('clearBtn').addEventListener('click', async () => {
+    if(!matchesLoaded) return alert('Results are still loading.');
     if(matches.length === 0) return alert('Nothing to clear.');
     if(!confirm('Clear ALL match results?')) return;
-    matches = [];
-    refresh();
+    try {
+      await matchesRef.remove();
+    } catch(err){
+      console.error('Failed to clear matches', err);
+      alert('❌ Failed to clear matches. ' + (err && err.message ? err.message : 'Please try again.'));
+    }
   });
 
   document.getElementById('exportBtn').addEventListener('click', () => {
-    const blob = new Blob([JSON.stringify(matches,null,2)], { type:'application/json' });
+    if(!matchesLoaded) return alert('Results are still loading.');
+    const payload = matches.map(({id, ...rest}) => rest);
+    const blob = new Blob([JSON.stringify(payload,null,2)], { type:'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = 'koc-season2-matches.json';
@@ -777,7 +835,7 @@
     const file = e.target.files[0];
     if(!file) return;
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       try{
         const data = JSON.parse(reader.result);
         if(!Array.isArray(data)) throw new Error('Invalid JSON shape');
@@ -787,10 +845,19 @@
           if(!u) throw new Error('Malformed match entry (invalid games)');
           if(!TEAMS.includes(u.t1) || !TEAMS.includes(u.t2)) throw new Error('Unknown team in data');
           if(u.win !== u.t1 && u.win !== u.t2) throw new Error('Match is missing a winner');
-          return u;
+          const { id, ...clean } = u;
+          return clean;
         });
-        matches = upgraded;
-        refresh();
+        if(upgraded.length === 0){
+          await matchesRef.set(null);
+        } else {
+          const updates = {};
+          upgraded.forEach(entry => {
+            const key = matchesRef.push().key;
+            updates[key] = entry;
+          });
+          await matchesRef.set(updates);
+        }
         alert('✅ Import successful.');
       } catch(err){
         console.error(err);
@@ -799,13 +866,17 @@
         e.target.value = '';
       }
     };
+    reader.onerror = () => {
+      alert('❌ Failed to read file.');
+      e.target.value = '';
+    };
     reader.readAsText(file);
   });
 
   /* ==========
      Initial render
      ========== */
-  refresh();
+  renderAll();
 </script>
 </body>
 </html>
