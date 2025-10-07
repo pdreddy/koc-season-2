@@ -154,11 +154,21 @@
     .line-team-status[data-state="tied"]{ color:#b45309; }
     .line-team-status[data-state="winner"]{ color:#047857; }
     .line-set-inputs{ display:grid; grid-template-columns:repeat(3, minmax(60px,1fr)); gap:.45rem; grid-column:span 3; }
+    .set-field{ display:flex; flex-direction:column; align-items:center; gap:.35rem; }
     .set-input{
       width:100%; padding:.55rem 0; border:2px solid rgba(148,163,184,.4); border-radius:10px; text-align:center; font-weight:800;
       font-size:1rem; background:#f8fafc; transition:.2s ease; color:#0f172a;
     }
     .set-input:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(34,211,238,.2); background:#ecfeff; }
+    .tie-break{ display:flex; align-items:center; gap:.35rem; font-size:.75rem; font-weight:700; color:#475569; }
+    .tie-label{
+      padding:.15rem .45rem; border-radius:999px; background:rgba(148,163,184,.2); letter-spacing:.05em;
+    }
+    .tie-input{
+      width:3.25rem; padding:.35rem 0; border:2px solid rgba(148,163,184,.4); border-radius:8px; text-align:center; font-weight:700;
+      font-size:.85rem; background:#fff; color:#0f172a;
+    }
+    .tie-input:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 2px rgba(34,211,238,.2); }
     .line-total{
       justify-self:center; font-weight:900; font-size:1.1rem; color:#1f2937; min-width:2.5rem; text-align:center; padding:.35rem .5rem;
       border-radius:10px; background:#f1f5f9;
@@ -212,6 +222,7 @@
       .line-set-labels{ grid-template-columns:minmax(0,1fr) repeat(3, minmax(48px,1fr)) minmax(48px,.8fr); padding-left:.25rem; }
       .line-side{ grid-template-columns:minmax(0,1fr) repeat(3, minmax(48px,1fr)) minmax(48px,.8fr); padding:.5rem .5rem; }
       .line-set-inputs{ grid-template-columns:repeat(3, minmax(48px,1fr)); gap:.35rem; }
+      .tie-input{ width:2.75rem; }
       .line-side-avatar{ width:34px; height:34px; font-size:.95rem; }
       .line-team-label{ font-size:.95rem; }
     }
@@ -287,7 +298,7 @@
         </div>
       </div>
       <div id="lineContainer" class="line-list" aria-live="polite"></div>
-      <p class="line-hint">Leave courts you didn't play empty or remove them. Enter set-by-set games (include tiebreak points such as 7-6 → 7).</p>
+      <p class="line-hint">Leave courts you didn't play empty or remove them. Enter set-by-set games &mdash; if a set ends level, tiebreak boxes will appear so you can record the breaker.</p>
     </div>
 
     <div class="dreambreaker">
@@ -441,17 +452,27 @@
 
   function updateLineTotals(row){
     if(!row) return;
-    const totals = { 1:0, 2:0 };
-    let hasPair = false;
     let partial = false;
+    let seenAny = false;
+    const setsForTotals = [];
 
     for(let i=0; i<SET_COUNT; i++){
       const t1Input = row.querySelector(`.set-input[data-team="1"][data-set="${i}"]`);
       const t2Input = row.querySelector(`.set-input[data-team="2"][data-set="${i}"]`);
-      if(!t1Input || !t2Input) continue;
+      const tieWraps = row.querySelectorAll(`.tie-break[data-set="${i}"]`);
+      const tieInputs = row.querySelectorAll(`.tie-input[data-set="${i}"]`);
+      if(!t1Input || !t2Input){
+        tieWraps.forEach(w => w.classList.add('hidden'));
+        continue;
+      }
       const raw1 = t1Input.value.trim();
       const raw2 = t2Input.value.trim();
-      if(raw1 === '' && raw2 === '') continue;
+      if(raw1 === '' && raw2 === ''){
+        tieWraps.forEach(w => w.classList.add('hidden'));
+        tieInputs.forEach(input => { if(input.value !== '') input.value = ''; });
+        continue;
+      }
+      seenAny = true;
       if(raw1 === '' || raw2 === ''){
         partial = true;
         continue;
@@ -462,15 +483,54 @@
         partial = true;
         continue;
       }
-      hasPair = true;
-      totals[1] += val1;
-      totals[2] += val2;
+      if(val1 < 0 || val2 < 0 || val1 > MAX_SET_GAMES || val2 > MAX_SET_GAMES){
+        partial = true;
+        continue;
+      }
+
+      let tieBreak = null;
+      if(val1 === val2){
+        tieWraps.forEach(w => w.classList.remove('hidden'));
+        const tieInput1 = row.querySelector(`.tie-input[data-team="1"][data-set="${i}"]`);
+        const tieInput2 = row.querySelector(`.tie-input[data-team="2"][data-set="${i}"]`);
+        const tieRaw1 = tieInput1 ? tieInput1.value.trim() : '';
+        const tieRaw2 = tieInput2 ? tieInput2.value.trim() : '';
+        if(tieRaw1 === '' && tieRaw2 === ''){
+          partial = true;
+          continue;
+        }
+        if(tieRaw1 === '' || tieRaw2 === ''){
+          partial = true;
+          continue;
+        }
+        const tie1 = Number(tieRaw1);
+        const tie2 = Number(tieRaw2);
+        if(!Number.isInteger(tie1) || !Number.isInteger(tie2) || tie1 === tie2 || tie1 < 0 || tie2 < 0 || tie1 > 30 || tie2 > 30){
+          partial = true;
+          continue;
+        }
+        tieBreak = { team1: tie1, team2: tie2 };
+      } else {
+        tieWraps.forEach(w => w.classList.add('hidden'));
+        tieInputs.forEach(input => { if(input.value !== '') input.value = ''; });
+      }
+
+      setsForTotals.push({ team1: val1, team2: val2, tieBreak });
     }
+
+    const totals = computeLineTotalsFromSets(setsForTotals);
 
     const sides = row.querySelectorAll('.line-side');
     sides.forEach(side => side.classList.remove('winner', 'tied'));
 
-    const mode = partial ? 'incomplete' : (hasPair ? 'complete' : 'empty');
+    let mode = 'empty';
+    if(partial){
+      mode = 'incomplete';
+    } else if(setsForTotals.length){
+      mode = 'complete';
+    } else if(seenAny){
+      mode = 'incomplete';
+    }
 
     [1,2].forEach(team => {
       const totalEl = row.querySelector(`.line-total[data-team="${team}"]`);
@@ -478,7 +538,8 @@
         if(mode === 'empty'){
           totalEl.textContent = '—';
         } else {
-          totalEl.textContent = totals[team];
+          const value = team === 1 ? totals.team1 : totals.team2;
+          totalEl.textContent = value;
         }
       }
       const statusEl = row.querySelector(`.line-team-status[data-team="${team}"]`);
@@ -500,7 +561,7 @@
       const status2 = row.querySelector('.line-team-status[data-team="2"]');
       const side1 = row.querySelector('.line-side[data-team="1"]');
       const side2 = row.querySelector('.line-side[data-team="2"]');
-      if(totals[1] > totals[2]){
+      if(totals.team1 > totals.team2){
         if(status1){
           status1.textContent = 'WINNER';
           status1.dataset.state = 'winner';
@@ -510,7 +571,7 @@
           status2.dataset.state = 'default';
         }
         if(side1) side1.classList.add('winner');
-      } else if(totals[2] > totals[1]){
+      } else if(totals.team2 > totals.team1){
         if(status2){
           status2.textContent = 'WINNER';
           status2.dataset.state = 'winner';
@@ -544,7 +605,11 @@
       const t2 = Number(set.team2);
       const safe1 = Number.isFinite(t1) ? t1 : set.team1;
       const safe2 = Number.isFinite(t2) ? t2 : set.team2;
-      const text = `S${label} ${safe1}-${safe2}`;
+      let text = `S${label} ${safe1}-${safe2}`;
+      const tie = extractTieBreak(set);
+      if(tie){
+        text += ` (TB ${tie.team1}-${tie.team2})`;
+      }
       return html ? escapeHTML(text) : text;
     });
     return ` (${parts.join(', ')})`;
@@ -589,17 +654,57 @@
     "Court Conquerors"
   ];
   const DEFAULT_LINES = [
-    'Line 1 Singles',
-    'Line 2 Singles',
-    'Line 3 Singles',
-    'Line 4 Singles',
-    'Line 1 Doubles'
+    'Doubles Line 1',
+    'Doubles Line 2',
+    'Doubles Line 3',
+    'Doubles Line 4',
+    'Singles Line 1'
   ];
   const SET_COUNT = 3;
   const MAX_SET_GAMES = 15;
 
   const HTML_ESCAPE_LOOKUP = { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' };
   const escapeHTML = (value='') => String(value).replace(/[&<>"']/g, ch => HTML_ESCAPE_LOOKUP[ch] || ch);
+
+  function extractTieBreak(entry){
+    if(!entry || typeof entry !== 'object') return null;
+    const direct = entry.tieBreak ?? entry.tiebreak ?? entry.tb ?? null;
+    let tie1;
+    let tie2;
+    if(direct && typeof direct === 'object'){
+      tie1 = Number(direct.team1 ?? direct.t1 ?? direct.a ?? direct.score1 ?? direct.p1);
+      tie2 = Number(direct.team2 ?? direct.t2 ?? direct.b ?? direct.score2 ?? direct.p2);
+    }
+    if(!Number.isInteger(tie1) || !Number.isInteger(tie2)){
+      tie1 = Number(entry.tieBreakTeam1 ?? entry.tiebreakTeam1 ?? entry.tie1 ?? entry.tb1 ?? entry.t1tb ?? entry.tbTeam1);
+      tie2 = Number(entry.tieBreakTeam2 ?? entry.tiebreakTeam2 ?? entry.tie2 ?? entry.tb2 ?? entry.t2tb ?? entry.tbTeam2);
+    }
+    if(!Number.isInteger(tie1) || !Number.isInteger(tie2)) return null;
+    if(tie1 < 0 || tie2 < 0 || tie1 > 30 || tie2 > 30) return null;
+    if(tie1 === tie2) return null;
+    return { team1: tie1, team2: tie2 };
+  }
+
+  function computeLineTotalsFromSets(sets){
+    if(!Array.isArray(sets) || !sets.length) return { team1:0, team2:0 };
+    return sets.reduce((totals, set) => {
+      const games1 = Number(set.team1);
+      const games2 = Number(set.team2);
+      if(Number.isInteger(games1)) totals.team1 += games1;
+      if(Number.isInteger(games2)) totals.team2 += games2;
+      if(Number.isInteger(games1) && Number.isInteger(games2) && games1 === games2){
+        const tie = extractTieBreak(set) ?? (set.tieBreak ?? null);
+        if(tie && Number.isInteger(tie.team1) && Number.isInteger(tie.team2) && tie.team1 !== tie.team2){
+          if(tie.team1 > tie.team2){
+            totals.team1 += 1;
+          } else {
+            totals.team2 += 1;
+          }
+        }
+      }
+      return totals;
+    }, { team1:0, team2:0 });
+  }
 
   function sanitizeSetList(list){
     if(!Array.isArray(list)) return [];
@@ -614,7 +719,10 @@
       if(!Number.isInteger(setNumber) || setNumber < 1 || setNumber > 5){
         setNumber = clean.length + 1;
       }
-      clean.push({ set:setNumber, team1:t1, team2:t2 });
+      const tieBreak = t1 === t2 ? extractTieBreak(entry) : null;
+      const payload = { set:setNumber, team1:t1, team2:t2 };
+      if(tieBreak) payload.tieBreak = tieBreak;
+      clean.push(payload);
     });
     clean.sort((a,b)=>a.set - b.set);
     return clean;
@@ -626,19 +734,24 @@
     list.forEach((entry) => {
       if(!entry) return;
       const label = typeof entry.label === 'string' ? entry.label.trim() : '';
+      const sets = sanitizeSetList(entry.sets ?? entry.setScores ?? entry.setList);
       let g1 = Number(entry.g1);
       let g2 = Number(entry.g2);
-      const sets = sanitizeSetList(entry.sets ?? entry.setScores ?? entry.setList);
-      if(!Number.isInteger(g1) || !Number.isInteger(g2)){
-        if(sets.length){
-          g1 = sets.reduce((sum,set)=>sum + set.team1,0);
-          g2 = sets.reduce((sum,set)=>sum + set.team2,0);
-        }
+      if(sets.length){
+        const totals = computeLineTotalsFromSets(sets);
+        g1 = totals.team1;
+        g2 = totals.team2;
       }
       if(!Number.isInteger(g1) || !Number.isInteger(g2)) return;
       if(g1 < 0 || g2 < 0 || g1 > 90 || g2 > 90) return;
       const cleanEntry = { label: label || `Court ${clean.length + 1}`, g1, g2 };
-      if(sets.length) cleanEntry.sets = sets.map(set => ({ set:set.set, team1:set.team1, team2:set.team2 }));
+      if(sets.length){
+        cleanEntry.sets = sets.map(set => {
+          const payload = { set:set.set, team1:set.team1, team2:set.team2 };
+          if(set.tieBreak) payload.tieBreak = { team1:set.tieBreak.team1, team2:set.tieBreak.team2 };
+          return payload;
+        });
+      }
       clean.push(cleanEntry);
     });
     return clean;
@@ -835,9 +948,16 @@
     if(Array.isArray(sets)){
       sets.forEach((set, idx) => {
         const rawIndex = Number(set.set ?? set.index ?? set.order ?? (idx + 1));
-        if(Number.isInteger(rawIndex) && rawIndex >= 1 && rawIndex <= SET_COUNT){
-          normalizedSets.set(rawIndex - 1, { team1: set.team1 ?? set.t1 ?? set.score1, team2: set.team2 ?? set.t2 ?? set.score2 });
+        if(!Number.isInteger(rawIndex) || rawIndex < 1 || rawIndex > SET_COUNT) return;
+        const base = {
+          team1: set.team1 ?? set.t1 ?? set.score1,
+          team2: set.team2 ?? set.t2 ?? set.score2
+        };
+        const tieBreak = extractTieBreak(set);
+        if(tieBreak){
+          base.tieBreak = tieBreak;
         }
+        normalizedSets.set(rawIndex - 1, base);
       });
     }
 
@@ -874,25 +994,64 @@
       setInputs.className = 'line-set-inputs';
 
       for(let i = 0; i < SET_COUNT; i++){
-        const input = document.createElement('input');
-        input.type = 'number';
-        input.inputMode = 'numeric';
-        input.className = 'set-input';
-        input.min = '0';
-        input.max = String(MAX_SET_GAMES);
-        input.step = '1';
-        input.dataset.team = String(team);
-        input.dataset.set = String(i);
-        input.setAttribute('aria-label', `${team === 1 ? 'Team 1' : 'Team 2'} set ${i + 1} games`);
+        const field = document.createElement('div');
+        field.className = 'set-field';
+        field.dataset.set = String(i);
+
+        const gamesInput = document.createElement('input');
+        gamesInput.type = 'number';
+        gamesInput.inputMode = 'numeric';
+        gamesInput.className = 'set-input';
+        gamesInput.min = '0';
+        gamesInput.max = String(MAX_SET_GAMES);
+        gamesInput.step = '1';
+        gamesInput.dataset.team = String(team);
+        gamesInput.dataset.set = String(i);
+        gamesInput.setAttribute('aria-label', `${team === 1 ? 'Team 1' : 'Team 2'} set ${i + 1} games`);
+
         const stored = normalizedSets.get(i);
         if(stored){
           const value = team === 1 ? stored.team1 : stored.team2;
           if(Number.isInteger(Number(value))){
-            input.value = Number(value);
+            gamesInput.value = Number(value);
           }
         }
-        input.addEventListener('input', () => updateLineTotals(row));
-        setInputs.appendChild(input);
+
+        gamesInput.addEventListener('input', () => updateLineTotals(row));
+        field.appendChild(gamesInput);
+
+        const tieWrap = document.createElement('div');
+        tieWrap.className = 'tie-break hidden';
+        tieWrap.dataset.set = String(i);
+
+        const tieLabel = document.createElement('span');
+        tieLabel.className = 'tie-label';
+        tieLabel.textContent = 'TB';
+
+        const tieInput = document.createElement('input');
+        tieInput.type = 'number';
+        tieInput.inputMode = 'numeric';
+        tieInput.className = 'tie-input';
+        tieInput.min = '0';
+        tieInput.max = '30';
+        tieInput.step = '1';
+        tieInput.dataset.team = String(team);
+        tieInput.dataset.set = String(i);
+        tieInput.setAttribute('aria-label', `${team === 1 ? 'Team 1' : 'Team 2'} set ${i + 1} tiebreak points`);
+
+        if(stored && stored.tieBreak){
+          const tieVal = team === 1 ? stored.tieBreak.team1 : stored.tieBreak.team2;
+          if(Number.isInteger(Number(tieVal))){
+            tieInput.value = Number(tieVal);
+            tieWrap.classList.remove('hidden');
+          }
+        }
+
+        tieInput.addEventListener('input', () => updateLineTotals(row));
+
+        tieWrap.append(tieLabel, tieInput);
+        field.appendChild(tieWrap);
+        setInputs.appendChild(field);
       }
 
       const total = document.createElement('div');
@@ -934,6 +1093,7 @@
   function clearLineScores(){
     Array.from(lineContainer.querySelectorAll('.line-row')).forEach(row => {
       row.querySelectorAll('.set-input').forEach(input => { input.value = ''; });
+      row.querySelectorAll('.tie-input').forEach(input => { input.value = ''; });
       updateLineTotals(row);
     });
   }
@@ -988,14 +1148,38 @@
         if(val1 > MAX_SET_GAMES || val2 > MAX_SET_GAMES){
           return { ok:false, msg:`Set ${s+1} on ${label} looks too high.` };
         }
-        sets.push({ set: s + 1, team1: val1, team2: val2 });
+        const entry = { set: s + 1, team1: val1, team2: val2 };
+        if(val1 === val2){
+          const tieInput1 = row.querySelector(`.tie-input[data-team="1"][data-set="${s}"]`);
+          const tieInput2 = row.querySelector(`.tie-input[data-team="2"][data-set="${s}"]`);
+          const tieRaw1 = tieInput1 ? tieInput1.value.trim() : '';
+          const tieRaw2 = tieInput2 ? tieInput2.value.trim() : '';
+          if(tieRaw1 === '' || tieRaw2 === ''){
+            return { ok:false, msg:`Enter tiebreak points for Set ${s+1} on ${label}.` };
+          }
+          const tie1 = Number(tieRaw1);
+          const tie2 = Number(tieRaw2);
+          if(!Number.isInteger(tie1) || !Number.isInteger(tie2)){
+            return { ok:false, msg:`Tiebreak on Set ${s+1} for ${label} must use whole numbers.` };
+          }
+          if(tie1 < 0 || tie2 < 0){
+            return { ok:false, msg:`Tiebreak on Set ${s+1} for ${label} cannot be negative.` };
+          }
+          if(tie1 > 30 || tie2 > 30){
+            return { ok:false, msg:`Tiebreak on Set ${s+1} for ${label} looks too high.` };
+          }
+          if(tie1 === tie2){
+            return { ok:false, msg:`Tiebreak on Set ${s+1} for ${label} needs a winner.` };
+          }
+          entry.tieBreak = { team1: tie1, team2: tie2 };
+        }
+        sets.push(entry);
       }
       if(sets.length === 0) continue;
-      const lineTotal1 = sets.reduce((sum,set)=>sum + set.team1,0);
-      const lineTotal2 = sets.reduce((sum,set)=>sum + set.team2,0);
-      lines.push({ label, g1: lineTotal1, g2: lineTotal2, sets });
-      total1 += lineTotal1;
-      total2 += lineTotal2;
+      const totals = computeLineTotalsFromSets(sets);
+      lines.push({ label, g1: totals.team1, g2: totals.team2, sets });
+      total1 += totals.team1;
+      total2 += totals.team2;
     }
     if(lines.length === 0){
       return { ok:false, msg:'Enter at least one set score.' };
