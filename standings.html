@@ -83,19 +83,100 @@
     .tools{ display:flex; gap:.5rem; flex-wrap:wrap; }
 
     .match-form{
-      display:grid; grid-template-columns:1fr auto 1fr; gap:1rem; align-items:start; margin-top:.25rem;
+      display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:1rem; align-items:start; margin-top:.25rem;
     }
     .team-input{
       display:flex; flex-direction:column; gap:.6rem; background:#fff; padding:1rem; border-radius:10px; border:2px solid var(--ring);
     }
     .input-label{ font-weight:800; text-align:center; }
-    .select-input,.number-input{
+    .select-input,.number-input,.text-input{
       padding:.7rem; border:2px solid var(--ring); border-radius:8px;
     }
-    .select-input:focus,.number-input:focus{ outline:none; border-color:var(--accent); }
+    .select-input:focus,.number-input:focus,.text-input:focus{ outline:none; border-color:var(--accent); }
     .inline{ display:flex; gap:.5rem; align-items:center; justify-content:space-between; }
 
     .legend{ color:var(--muted); font-size:.9rem; margin-top:.5rem; text-align:center; }
+
+    .line-editor{
+      background:#fff; border-radius:16px; border:2px dashed rgba(34,211,238,.6); padding:1.25rem; display:flex; flex-direction:column; gap:1rem;
+    }
+    .line-header{ display:flex; justify-content:space-between; align-items:center; gap:.75rem; flex-wrap:wrap; }
+    .line-actions{ display:flex; gap:.5rem; flex-wrap:wrap; }
+    .line-list{ display:flex; flex-direction:column; gap:.85rem; }
+    .line-row{
+      background:linear-gradient(135deg,#f8fafc 0%,#eef2ff 100%);
+      border-radius:18px; padding:1rem 1.1rem; box-shadow:0 6px 18px rgba(15,23,42,.12);
+      display:flex; flex-direction:column; gap:.9rem; position:relative;
+    }
+    .line-row::before{
+      content:""; position:absolute; inset:0; border-radius:18px; padding:1px; pointer-events:none;
+      background:linear-gradient(135deg,rgba(34,211,238,.8),rgba(102,126,234,.8)); -webkit-mask:
+        linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor; mask-composite: exclude;
+    }
+    .line-row-header{ display:flex; align-items:center; justify-content:space-between; gap:.75rem; }
+    .line-row .line-label{
+      font-weight:700; border-radius:12px; border:2px solid rgba(148,163,184,.4); padding:.65rem 1rem; flex:1;
+      background:#fff; box-shadow:inset 0 1px 0 rgba(255,255,255,.6);
+    }
+    .line-row .line-label:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(34,211,238,.25);
+      background:#f8feff;
+    }
+    .line-remove{ border:0; background:#fee2e2; color:#ef4444; font-size:1.15rem; cursor:pointer; padding:.35rem .6rem; border-radius:10px; transition:.2s ease; }
+    .line-remove:hover{ background:#fecaca; color:#b91c1c; }
+    .line-scorecard{
+      background:#fff; border-radius:14px; padding:1rem 1.1rem 1.1rem 1.45rem; display:flex; flex-direction:column; gap:.75rem; position:relative; overflow:hidden;
+    }
+    .line-scorecard::before{
+      content:""; position:absolute; left:0; top:0; bottom:0; width:4px; border-radius:14px 0 0 14px;
+      background:linear-gradient(180deg,#22d3ee,#667eea);
+    }
+    .line-set-labels{
+      display:grid; grid-template-columns:minmax(0,1.6fr) repeat(3, minmax(60px,1fr)) minmax(60px,.9fr);
+      padding-left:.75rem; font-size:.75rem; text-transform:uppercase; letter-spacing:.1em; color:#64748b; font-weight:700;
+    }
+    .line-set-labels span{ text-align:center; }
+    .line-set-labels span:first-child{ opacity:.7; text-align:left; }
+    .line-side{
+      display:grid; grid-template-columns:minmax(0,1.6fr) repeat(3, minmax(60px,1fr)) minmax(60px,.9fr);
+      align-items:center; justify-items:center; gap:.5rem; padding:.35rem .75rem;
+    }
+    .line-side > .line-side-info{ justify-self:start; }
+    .line-side + .line-side{ border-top:1px solid rgba(148,163,184,.35); padding-top:.75rem; margin-top:.35rem; }
+    .line-side-info{ display:flex; align-items:center; gap:.65rem; }
+    .line-side-avatar{
+      width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+      font-weight:800; background:linear-gradient(135deg,#667eea,#22d3ee); color:#fff; box-shadow:0 4px 10px rgba(79,70,229,.35);
+    }
+    .line-team-label{ font-weight:800; font-size:1rem; color:#1f2937; }
+    .line-team-status{ font-size:.7rem; text-transform:uppercase; letter-spacing:.08em; color:#94a3b8; font-weight:800; margin-top:.15rem; }
+    .line-team-status[data-state="incomplete"]{ color:#b45309; }
+    .line-team-status[data-state="tied"]{ color:#b45309; }
+    .line-team-status[data-state="winner"]{ color:#047857; }
+    .line-set-inputs{ display:grid; grid-template-columns:repeat(3, minmax(60px,1fr)); gap:.45rem; grid-column:span 3; }
+    .set-input{
+      width:100%; padding:.55rem 0; border:2px solid rgba(148,163,184,.4); border-radius:10px; text-align:center; font-weight:800;
+      font-size:1rem; background:#f8fafc; transition:.2s ease; color:#0f172a;
+    }
+    .set-input:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(34,211,238,.2); background:#ecfeff; }
+    .line-total{
+      justify-self:center; font-weight:900; font-size:1.1rem; color:#1f2937; min-width:2.5rem; text-align:center; padding:.35rem .5rem;
+      border-radius:10px; background:#f1f5f9;
+    }
+    .line-side.winner .line-team-status{ color:#047857; }
+    .line-side.winner .line-total{ background:rgba(16,185,129,.15); color:#065f46; }
+    .line-side.tied .line-team-status{ color:#b45309; }
+    .line-side.tied .line-total{ background:rgba(251,191,36,.18); color:#92400e; }
+    .line-hint{ color:var(--muted); font-size:.85rem; }
+    .dreambreaker{ display:flex; flex-direction:column; gap:.5rem; }
+    .dreambreaker-toggle{ display:flex; align-items:center; gap:.5rem; font-weight:600; }
+    .dreambreaker-fields{ display:grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap:.6rem; }
+    .dreambreaker-fields .number-input{ width:100%; }
+    .dreambreaker-note{ color:var(--muted); font-size:.85rem; }
+    .history-table details{ color:var(--muted); }
+    .history-table details summary{ cursor:pointer; color:#2563eb; font-weight:600; }
+    .history-table details[open]{ padding-top:.35rem; }
+    .history-table details[open] summary{ margin-bottom:.25rem; }
 
     .form-actions{ display:flex; gap:.6rem; justify-content:center; flex-wrap:wrap; margin-top:1rem; }
     .hidden{ display:none; }
@@ -128,6 +209,11 @@
       .match-form{ grid-template-columns:1fr; }
       .btn{ width:100%; }
       .card{ padding:1rem; }
+      .line-set-labels{ grid-template-columns:minmax(0,1fr) repeat(3, minmax(48px,1fr)) minmax(48px,.8fr); padding-left:.25rem; }
+      .line-side{ grid-template-columns:minmax(0,1fr) repeat(3, minmax(48px,1fr)) minmax(48px,.8fr); padding:.5rem .5rem; }
+      .line-set-inputs{ grid-template-columns:repeat(3, minmax(48px,1fr)); gap:.35rem; }
+      .line-side-avatar{ width:34px; height:34px; font-size:.95rem; }
+      .line-team-label{ font-size:.95rem; }
     }
   </style>
 </head>
@@ -152,7 +238,7 @@
 <main class="container">
   <section class="page-header">
     <h1>Tournament Standings</h1>
-    <p>Live rankings and match results (stored in your browser)</p>
+    <p>Live rankings and match results (stored securely in Firebase)</p>
   </section>
 
   <!-- Access Code -->
@@ -162,7 +248,7 @@
       <input type="password" id="accessCode" placeholder="Enter access code" class="access-input" />
       <button class="btn" id="unlockBtn">Unlock Scoring</button>
     </div>
-    <p class="hint">Use access code <strong>SCORE2025</strong>. Data is saved in <em>localStorage</em>.</p>
+    <p class="hint">Use access code <strong>SCORE2025</strong>. Data is saved in <em>Firebase</em>.</p>
   </section>
 
   <!-- Scoring Form -->
@@ -183,27 +269,43 @@
         <select id="team1Name" class="select-input" required>
           <option value="">Select Team 1</option>
         </select>
-        <div class="inline">
-          <label>Games Won</label>
-          <input type="number" id="team1Games" placeholder="0–30" min="0" max="30" step="1" class="number-input" required />
-        </div>
       </div>
-
-      <div class="inline" style="align-self:center; font-weight:900; font-size:1.2rem;">VS</div>
-
       <div class="team-input">
         <label class="input-label">Team 2</label>
         <select id="team2Name" class="select-input" required>
           <option value="">Select Team 2</option>
         </select>
-        <div class="inline">
-          <label>Games Won</label>
-          <input type="number" id="team2Games" placeholder="0–30" min="0" max="30" step="1" class="number-input" required />
-        </div>
       </div>
     </div>
 
-    <p class="legend">Universal Tennis format: enter total <strong>games won</strong> by each team (include the tiebreak game if played). Winner earns <strong>1 match point</strong>.</p>
+    <div class="line-editor" aria-labelledby="courtLabel">
+      <div class="line-header">
+        <div id="courtLabel"><strong>Court Breakdown</strong> (enter games won per court)</div>
+        <div class="line-actions">
+          <button type="button" class="btn ghost" id="resetLinesBtn">Reset Courts</button>
+          <button type="button" class="btn ghost" id="addLineBtn">+ Add Court</button>
+        </div>
+      </div>
+      <div id="lineContainer" class="line-list" aria-live="polite"></div>
+      <p class="line-hint">Leave courts you didn't play empty or remove them. Enter set-by-set games (include tiebreak points such as 7-6 → 7).</p>
+    </div>
+
+    <div class="dreambreaker">
+      <label class="dreambreaker-toggle"><input type="checkbox" id="dreambreakerToggle" /> Dreambreaker played</label>
+      <div id="dreambreakerFields" class="dreambreaker-fields hidden">
+        <div>
+          <label>Dreambreaker Points (Team 1)</label>
+          <input type="number" id="dreambreakerTeam1" class="number-input" min="0" max="20" step="1" />
+        </div>
+        <div>
+          <label>Dreambreaker Points (Team 2)</label>
+          <input type="number" id="dreambreakerTeam2" class="number-input" min="0" max="20" step="1" />
+        </div>
+      </div>
+      <p class="dreambreaker-note">Use the dreambreaker fields only if total games are tied. Winner still earns <strong>1 match point</strong>.</p>
+    </div>
+
+    <p class="legend">Universal Tennis Team format: total match winner is determined by <strong>games won across all courts</strong>. Enter each court's score to auto-calculate totals.</p>
 
     <div class="form-actions">
       <button class="btn success" id="addBtn">Save Result</button>
@@ -249,22 +351,232 @@
           <th>Teams</th>
           <th>Games</th>
           <th>Winner</th>
+          <th>Breakdown</th>
           <th>Date/Time</th>
         </tr>
         </thead>
         <tbody id="historyBody">
-        <tr><td colspan="5" class="center-cell" style="color:var(--muted);">No matches recorded.</td></tr>
+        <tr><td colspan="6" class="center-cell" style="color:var(--muted);">No matches recorded.</td></tr>
         </tbody>
       </table>
     </div>
   </section>
 </main>
 
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
   /* ==========
-     Storage & Teams
+     Firebase Setup & Teams
      ========== */
-  const STORAGE_KEY = 'kocS2_matches';
+  const firebaseConfig = {
+    apiKey: "AIzaSyDbO0eP52i4t3V94bEiDcl7WoKbSrrM9VA",
+    authDomain: "koc2-20fb8.firebaseapp.com",
+    databaseURL: "https://koc2-20fb8-default-rtdb.firebaseio.com",
+    projectId: "koc2-20fb8",
+    storageBucket: "koc2-20fb8.firebasestorage.app",
+    messagingSenderId: "317734341461",
+    appId: "1:317734341461:web:1bcad5a1792fac0e46bddc"
+  };
+
+  const firebaseApp = firebase.apps && firebase.apps.length ? firebase.app() : firebase.initializeApp(firebaseConfig);
+  const auth = firebaseApp.auth();
+  const database = firebaseApp.database();
+  const matchesRef = database.ref('season2Matches');
+
+  let authReady = false;
+  let authPromise = null;
+  let authError = null;
+
+  function ensureAuth(){
+    if(authReady) return Promise.resolve();
+    if(authPromise) return authPromise;
+    authPromise = auth.signInAnonymously()
+      .then(() => {
+        authReady = true;
+        authError = null;
+      })
+      .catch(err => {
+        authReady = false;
+        authError = err;
+        throw err;
+      })
+      .finally(() => {
+        authPromise = null;
+      });
+    return authPromise;
+  }
+
+  function getTeamDisplayName(team){
+    const select = team === 1 ? t1 : t2;
+    const value = select && select.value ? select.value.trim() : '';
+    return value || `Team ${team}`;
+  }
+
+  function refreshLineTeamLabelsForRow(row){
+    if(!row) return;
+    const name1 = getTeamDisplayName(1);
+    const name2 = getTeamDisplayName(2);
+    row.querySelectorAll('.line-team-label').forEach(label => {
+      const team = Number(label.dataset.team);
+      if(team === 1){
+        label.textContent = name1;
+      } else if(team === 2){
+        label.textContent = name2;
+      }
+    });
+    row.querySelectorAll('.line-side-avatar').forEach(avatar => {
+      const team = Number(avatar.dataset.team);
+      const label = team === 1 ? name1 : name2;
+      const initial = label ? label.charAt(0).toUpperCase() : String(team);
+      avatar.textContent = initial;
+      avatar.setAttribute('title', label);
+    });
+  }
+
+  function refreshAllLineTeamLabels(){
+    Array.from(lineContainer.querySelectorAll('.line-row')).forEach(refreshLineTeamLabelsForRow);
+  }
+
+  function updateLineTotals(row){
+    if(!row) return;
+    const totals = { 1:0, 2:0 };
+    let hasPair = false;
+    let partial = false;
+
+    for(let i=0; i<SET_COUNT; i++){
+      const t1Input = row.querySelector(`.set-input[data-team="1"][data-set="${i}"]`);
+      const t2Input = row.querySelector(`.set-input[data-team="2"][data-set="${i}"]`);
+      if(!t1Input || !t2Input) continue;
+      const raw1 = t1Input.value.trim();
+      const raw2 = t2Input.value.trim();
+      if(raw1 === '' && raw2 === '') continue;
+      if(raw1 === '' || raw2 === ''){
+        partial = true;
+        continue;
+      }
+      const val1 = Number(raw1);
+      const val2 = Number(raw2);
+      if(!Number.isInteger(val1) || !Number.isInteger(val2)){
+        partial = true;
+        continue;
+      }
+      hasPair = true;
+      totals[1] += val1;
+      totals[2] += val2;
+    }
+
+    const sides = row.querySelectorAll('.line-side');
+    sides.forEach(side => side.classList.remove('winner', 'tied'));
+
+    const mode = partial ? 'incomplete' : (hasPair ? 'complete' : 'empty');
+
+    [1,2].forEach(team => {
+      const totalEl = row.querySelector(`.line-total[data-team="${team}"]`);
+      if(totalEl){
+        if(mode === 'empty'){
+          totalEl.textContent = '—';
+        } else {
+          totalEl.textContent = totals[team];
+        }
+      }
+      const statusEl = row.querySelector(`.line-team-status[data-team="${team}"]`);
+      if(!statusEl) return;
+      if(mode === 'empty'){
+        statusEl.textContent = statusEl.dataset.defaultStatus || '';
+        statusEl.dataset.state = 'default';
+      } else if(mode === 'incomplete'){
+        statusEl.textContent = 'INCOMPLETE';
+        statusEl.dataset.state = 'incomplete';
+      } else {
+        statusEl.textContent = 'TIED';
+        statusEl.dataset.state = 'tied';
+      }
+    });
+
+    if(mode === 'complete'){
+      const status1 = row.querySelector('.line-team-status[data-team="1"]');
+      const status2 = row.querySelector('.line-team-status[data-team="2"]');
+      const side1 = row.querySelector('.line-side[data-team="1"]');
+      const side2 = row.querySelector('.line-side[data-team="2"]');
+      if(totals[1] > totals[2]){
+        if(status1){
+          status1.textContent = 'WINNER';
+          status1.dataset.state = 'winner';
+        }
+        if(status2){
+          status2.textContent = status2.dataset.defaultStatus || '';
+          status2.dataset.state = 'default';
+        }
+        if(side1) side1.classList.add('winner');
+      } else if(totals[2] > totals[1]){
+        if(status2){
+          status2.textContent = 'WINNER';
+          status2.dataset.state = 'winner';
+        }
+        if(status1){
+          status1.textContent = status1.dataset.defaultStatus || '';
+          status1.dataset.state = 'default';
+        }
+        if(side2) side2.classList.add('winner');
+      } else {
+        if(status1){
+          status1.textContent = 'TIED';
+          status1.dataset.state = 'tied';
+        }
+        if(status2){
+          status2.textContent = 'TIED';
+          status2.dataset.state = 'tied';
+        }
+        if(side1) side1.classList.add('tied');
+        if(side2) side2.classList.add('tied');
+      }
+    }
+  }
+
+  function formatLineSets(line, { html=false } = {}){
+    if(!line || !Array.isArray(line.sets) || !line.sets.length) return '';
+    const parts = line.sets.map((set, idx) => {
+      const setNumber = Number(set.set);
+      const label = Number.isInteger(setNumber) ? setNumber : (idx + 1);
+      const t1 = Number(set.team1);
+      const t2 = Number(set.team2);
+      const safe1 = Number.isFinite(t1) ? t1 : set.team1;
+      const safe2 = Number.isFinite(t2) ? t2 : set.team2;
+      const text = `S${label} ${safe1}-${safe2}`;
+      return html ? escapeHTML(text) : text;
+    });
+    return ` (${parts.join(', ')})`;
+  }
+
+  ensureAuth().catch(err => {
+    console.error('Failed to authenticate with Firebase', err);
+    alert('⚠️ Unable to authenticate with Firebase. Scores will be read-only.');
+  });
+
+  async function guardWriteAccess(){
+    try {
+      await ensureAuth();
+      if(!authReady){
+        throw authError || new Error('Authentication is required.');
+      }
+      return true;
+    } catch(err){
+      console.error('Firebase authentication required before updating scores', err);
+      alert('❌ Unable to authenticate with Firebase. Scores cannot be updated right now.');
+      return false;
+    }
+  }
+
+  const standingsBody = document.getElementById('standingsBody');
+  const historyBody = document.getElementById('historyBody');
+  standingsBody.innerHTML = '<tr><td colspan="9" class="center-cell" style="color:var(--muted);">Loading standings from Firebase…</td></tr>';
+  historyBody.innerHTML = '<tr><td colspan="6" class="center-cell" style="color:var(--muted);">Loading match history from Firebase…</td></tr>';
+
+  let matches = [];
+  let matchesLoaded = false;
+
   const TEAMS = [
     "Rally Royals",
     "Karna's Crusaders",
@@ -276,32 +588,157 @@
     "Mega Lions",
     "Court Conquerors"
   ];
+  const DEFAULT_LINES = [
+    'Line 1 Singles',
+    'Line 2 Singles',
+    'Line 3 Singles',
+    'Line 4 Singles',
+    'Line 1 Doubles'
+  ];
+  const SET_COUNT = 3;
+  const MAX_SET_GAMES = 15;
+
+  const HTML_ESCAPE_LOOKUP = { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' };
+  const escapeHTML = (value='') => String(value).replace(/[&<>"']/g, ch => HTML_ESCAPE_LOOKUP[ch] || ch);
+
+  function sanitizeSetList(list){
+    if(!Array.isArray(list)) return [];
+    const clean = [];
+    list.forEach((entry, idx) => {
+      if(!entry) return;
+      const t1 = Number(entry.team1 ?? entry.t1 ?? entry.a ?? entry.g1 ?? entry.score1);
+      const t2 = Number(entry.team2 ?? entry.t2 ?? entry.b ?? entry.g2 ?? entry.score2);
+      if(!Number.isInteger(t1) || !Number.isInteger(t2)) return;
+      if(t1 < 0 || t2 < 0 || t1 > MAX_SET_GAMES || t2 > MAX_SET_GAMES) return;
+      let setNumber = Number(entry.set ?? entry.index ?? entry.order ?? entry.num ?? (idx + 1));
+      if(!Number.isInteger(setNumber) || setNumber < 1 || setNumber > 5){
+        setNumber = clean.length + 1;
+      }
+      clean.push({ set:setNumber, team1:t1, team2:t2 });
+    });
+    clean.sort((a,b)=>a.set - b.set);
+    return clean;
+  }
+
+  function sanitizeLines(list){
+    if(!Array.isArray(list)) return [];
+    const clean = [];
+    list.forEach((entry) => {
+      if(!entry) return;
+      const label = typeof entry.label === 'string' ? entry.label.trim() : '';
+      let g1 = Number(entry.g1);
+      let g2 = Number(entry.g2);
+      const sets = sanitizeSetList(entry.sets ?? entry.setScores ?? entry.setList);
+      if(!Number.isInteger(g1) || !Number.isInteger(g2)){
+        if(sets.length){
+          g1 = sets.reduce((sum,set)=>sum + set.team1,0);
+          g2 = sets.reduce((sum,set)=>sum + set.team2,0);
+        }
+      }
+      if(!Number.isInteger(g1) || !Number.isInteger(g2)) return;
+      if(g1 < 0 || g2 < 0 || g1 > 90 || g2 > 90) return;
+      const cleanEntry = { label: label || `Court ${clean.length + 1}`, g1, g2 };
+      if(sets.length) cleanEntry.sets = sets.map(set => ({ set:set.set, team1:set.team1, team2:set.team2 }));
+      clean.push(cleanEntry);
+    });
+    return clean;
+  }
+
+  function sanitizeDreambreaker(db){
+    if(!db) return null;
+    const g1 = Number(db.g1 ?? db.team1 ?? db.t1 ?? db.points1 ?? db.p1);
+    const g2 = Number(db.g2 ?? db.team2 ?? db.t2 ?? db.points2 ?? db.p2);
+    if(!Number.isInteger(g1) || !Number.isInteger(g2)) return null;
+    if(g1 < 0 || g2 < 0 || g1 > 40 || g2 > 40) return null;
+    if(g1 === 0 && g2 === 0) return null;
+    return { g1, g2 };
+  }
 
   function upgradeMatch(m){
     if(!m || !m.t1 || !m.t2) return null;
-    const g1Raw = typeof m.g1 !== 'undefined' ? Number(m.g1) : Number(m.s1 ?? 0);
-    const g2Raw = typeof m.g2 !== 'undefined' ? Number(m.g2) : Number(m.s2 ?? 0);
-    if(!Number.isFinite(g1Raw) || !Number.isFinite(g2Raw)) return null;
-    const g1 = Math.round(g1Raw);
-    const g2 = Math.round(g2Raw);
-    if(g1 < 0 || g2 < 0 || g1 > 40 || g2 > 40) return null;
+    const lines = sanitizeLines(m.lines);
+    let g1 = Number(m.g1);
+    let g2 = Number(m.g2);
+
+    if(!Number.isFinite(g1) || !Number.isFinite(g2)){
+      if(lines.length){
+        g1 = lines.reduce((sum,row)=>sum+row.g1,0);
+        g2 = lines.reduce((sum,row)=>sum+row.g2,0);
+      } else if(typeof m.s1 !== 'undefined' && typeof m.s2 !== 'undefined'){
+        g1 = Number(m.s1);
+        g2 = Number(m.s2);
+      }
+    }
+
+    if(!Number.isFinite(g1) || !Number.isFinite(g2)) return null;
+    g1 = Math.round(g1);
+    g2 = Math.round(g2);
+    if(g1 < 0 || g2 < 0 || g1 > 120 || g2 > 120) return null;
+
+    if(lines.length){
+      const sum1 = lines.reduce((sum,row)=>sum+row.g1,0);
+      const sum2 = lines.reduce((sum,row)=>sum+row.g2,0);
+      g1 = sum1;
+      g2 = sum2;
+    }
+
+    const dreambreaker = sanitizeDreambreaker(m.dreambreaker);
     const derivedWin = g1 === g2 ? null : (g1 > g2 ? m.t1 : m.t2);
-    const win = (m.win === m.t1 || m.win === m.t2) ? m.win : derivedWin;
+    let win = (m.win === m.t1 || m.win === m.t2) ? m.win : derivedWin;
+    if(!win && dreambreaker && dreambreaker.g1 !== dreambreaker.g2){
+      win = dreambreaker.g1 > dreambreaker.g2 ? m.t1 : m.t2;
+    }
+
     const tsNumber = Number(m.ts);
     const ts = Number.isFinite(tsNumber) ? tsNumber : Date.now();
-    return { t1:m.t1, t2:m.t2, g1, g2, win, ts };
+    const upgraded = { t1:m.t1, t2:m.t2, g1, g2, win, ts };
+    if(lines.length) upgraded.lines = lines;
+    if(dreambreaker && dreambreaker.g1 !== dreambreaker.g2) upgraded.dreambreaker = dreambreaker;
+    return upgraded;
   }
 
-  function loadMatches(){
-    try {
-      const raw = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-      return raw.map(upgradeMatch).filter(Boolean);
+  function handleSnapshot(snapshot){
+    const data = snapshot.val();
+    const list = [];
+    if(data && typeof data === 'object'){
+      for(const [id, entry] of Object.entries(data)){
+        const upgraded = upgradeMatch(entry);
+        if(upgraded){
+          upgraded.id = id;
+          list.push(upgraded);
+        }
+      }
     }
-    catch { return []; }
+    matches = list.sort((a,b)=>b.ts - a.ts);
+    matchesLoaded = true;
+    renderAll();
   }
-  function saveMatches(list){ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
 
-  let matches = loadMatches(); // [{t1,t2,g1,g2,ts,win}]
+  async function handleMatchesError(error){
+    console.error('Failed to load matches from Firebase', error);
+    if(error && error.code === 'PERMISSION_DENIED'){
+      try {
+        await ensureAuth();
+        if(authReady){
+          subscribeToMatches();
+          return;
+        }
+      } catch(authErr){
+        console.error('Firebase authentication attempt failed while retrying listener', authErr);
+      }
+    }
+    matches = [];
+    matchesLoaded = true;
+    renderAll();
+    alert('❌ Failed to load matches from server. Please try again later.');
+  }
+
+  function subscribeToMatches(){
+    matchesRef.off();
+    matchesRef.on('value', handleSnapshot, handleMatchesError);
+  }
+
+  subscribeToMatches();
 
   /* ==========
      UI: Nav (mobile)
@@ -343,17 +780,250 @@
     t2.innerHTML = opts.replace('Select Team','Select Team 2');
   }
   fillTeams();
+  t1.addEventListener('change', () => refreshAllLineTeamLabels());
+  t2.addEventListener('change', () => refreshAllLineTeamLabels());
 
   /* ==========
-     Validation helpers (UTR games-based)
+     Court editor helpers
      ========== */
-  function validateGames(a,b){
+  const lineContainer = document.getElementById('lineContainer');
+  const addLineBtn = document.getElementById('addLineBtn');
+  const resetLinesBtn = document.getElementById('resetLinesBtn');
+  const dreambreakerToggle = document.getElementById('dreambreakerToggle');
+  const dreambreakerFields = document.getElementById('dreambreakerFields');
+  const dreambreakerTeam1 = document.getElementById('dreambreakerTeam1');
+  const dreambreakerTeam2 = document.getElementById('dreambreakerTeam2');
+
+  function makeLineRow(label='', sets=[]){
+    const row = document.createElement('div');
+    row.className = 'line-row';
+
+    const header = document.createElement('div');
+    header.className = 'line-row-header';
+
+    const labelInput = document.createElement('input');
+    labelInput.type = 'text';
+    labelInput.className = 'line-label';
+    labelInput.placeholder = 'Court or matchup (e.g. Line 1 Singles)';
+    labelInput.value = label;
+
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'line-remove';
+    removeBtn.title = 'Remove court';
+    removeBtn.textContent = '✕';
+    removeBtn.addEventListener('click', () => {
+      row.remove();
+      if(!lineContainer.children.length){
+        addDefaultLines();
+      } else {
+        refreshAllLineTeamLabels();
+      }
+    });
+
+    header.append(labelInput, removeBtn);
+
+    const scorecard = document.createElement('div');
+    scorecard.className = 'line-scorecard';
+
+    const setLabels = document.createElement('div');
+    setLabels.className = 'line-set-labels';
+    setLabels.innerHTML = `<span>Matchup</span>${Array.from({ length: SET_COUNT }, (_, i) => `<span>Set ${i + 1}</span>`).join('')}<span>Total</span>`;
+    scorecard.appendChild(setLabels);
+
+    const normalizedSets = new Map();
+    if(Array.isArray(sets)){
+      sets.forEach((set, idx) => {
+        const rawIndex = Number(set.set ?? set.index ?? set.order ?? (idx + 1));
+        if(Number.isInteger(rawIndex) && rawIndex >= 1 && rawIndex <= SET_COUNT){
+          normalizedSets.set(rawIndex - 1, { team1: set.team1 ?? set.t1 ?? set.score1, team2: set.team2 ?? set.t2 ?? set.score2 });
+        }
+      });
+    }
+
+    const buildSide = (team) => {
+      const side = document.createElement('div');
+      side.className = 'line-side';
+      side.dataset.team = String(team);
+
+      const info = document.createElement('div');
+      info.className = 'line-side-info';
+
+      const avatar = document.createElement('div');
+      avatar.className = 'line-side-avatar';
+      avatar.dataset.team = String(team);
+      avatar.textContent = team;
+
+      const infoText = document.createElement('div');
+
+      const name = document.createElement('div');
+      name.className = 'line-team-label';
+      name.dataset.team = String(team);
+      name.textContent = team === 1 ? 'Team 1' : 'Team 2';
+
+      const status = document.createElement('div');
+      status.className = 'line-team-status';
+      status.dataset.team = String(team);
+      status.dataset.defaultStatus = team === 1 ? 'PLAYER 1' : 'PLAYER 2';
+      status.textContent = status.dataset.defaultStatus;
+
+      infoText.append(name, status);
+      info.append(avatar, infoText);
+
+      const setInputs = document.createElement('div');
+      setInputs.className = 'line-set-inputs';
+
+      for(let i = 0; i < SET_COUNT; i++){
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.inputMode = 'numeric';
+        input.className = 'set-input';
+        input.min = '0';
+        input.max = String(MAX_SET_GAMES);
+        input.step = '1';
+        input.dataset.team = String(team);
+        input.dataset.set = String(i);
+        input.setAttribute('aria-label', `${team === 1 ? 'Team 1' : 'Team 2'} set ${i + 1} games`);
+        const stored = normalizedSets.get(i);
+        if(stored){
+          const value = team === 1 ? stored.team1 : stored.team2;
+          if(Number.isInteger(Number(value))){
+            input.value = Number(value);
+          }
+        }
+        input.addEventListener('input', () => updateLineTotals(row));
+        setInputs.appendChild(input);
+      }
+
+      const total = document.createElement('div');
+      total.className = 'line-total';
+      total.dataset.team = String(team);
+      total.textContent = '—';
+
+      side.append(info, setInputs, total);
+      return side;
+    };
+
+    scorecard.appendChild(buildSide(1));
+    scorecard.appendChild(buildSide(2));
+
+    row.append(header, scorecard);
+
+    refreshLineTeamLabelsForRow(row);
+    updateLineTotals(row);
+
+    return row;
+  }
+
+  function addLine(label=''){
+    const cleanLabel = label || `Court ${lineContainer.children.length + 1}`;
+    const row = makeLineRow(cleanLabel);
+    lineContainer.appendChild(row);
+    refreshLineTeamLabelsForRow(row);
+  }
+
+  function addDefaultLines(){
+    lineContainer.innerHTML = '';
+    DEFAULT_LINES.forEach(l => {
+      const row = makeLineRow(l);
+      lineContainer.appendChild(row);
+    });
+    refreshAllLineTeamLabels();
+  }
+
+  function clearLineScores(){
+    Array.from(lineContainer.querySelectorAll('.line-row')).forEach(row => {
+      row.querySelectorAll('.set-input').forEach(input => { input.value = ''; });
+      updateLineTotals(row);
+    });
+  }
+
+  addDefaultLines();
+
+  addLineBtn.addEventListener('click', () => {
+    const idx = lineContainer.children.length + 1;
+    const row = makeLineRow(`Court ${idx}`);
+    lineContainer.appendChild(row);
+  });
+  resetLinesBtn.addEventListener('click', () => {
+    addDefaultLines();
+  });
+
+  dreambreakerToggle.addEventListener('change', () => {
+    const on = dreambreakerToggle.checked;
+    dreambreakerFields.classList.toggle('hidden', !on);
+    if(!on){
+      dreambreakerTeam1.value = '';
+      dreambreakerTeam2.value = '';
+    }
+  });
+
+  function collectCourtData(){
+    const rows = Array.from(lineContainer.querySelectorAll('.line-row'));
+    const lines = [];
+    let total1 = 0, total2 = 0;
+    for(let i=0; i<rows.length; i++){
+      const row = rows[i];
+      const labelInput = row.querySelector('.line-label');
+      const label = (labelInput && labelInput.value ? labelInput.value : '').trim() || `Court ${i+1}`;
+      const sets = [];
+      for(let s=0; s<SET_COUNT; s++){
+        const input1 = row.querySelector(`.set-input[data-team="1"][data-set="${s}"]`);
+        const input2 = row.querySelector(`.set-input[data-team="2"][data-set="${s}"]`);
+        if(!input1 || !input2) continue;
+        const raw1 = input1.value.trim();
+        const raw2 = input2.value.trim();
+        if(raw1 === '' && raw2 === '') continue;
+        if(raw1 === '' || raw2 === ''){
+          return { ok:false, msg:`Complete both scores for Set ${s+1} on ${label}.` };
+        }
+        const val1 = Number(raw1);
+        const val2 = Number(raw2);
+        if(!Number.isInteger(val1) || !Number.isInteger(val2)){
+          return { ok:false, msg:`Set ${s+1} on ${label} must use whole numbers.` };
+        }
+        if(val1 < 0 || val2 < 0){
+          return { ok:false, msg:`Set ${s+1} on ${label} cannot be negative.` };
+        }
+        if(val1 > MAX_SET_GAMES || val2 > MAX_SET_GAMES){
+          return { ok:false, msg:`Set ${s+1} on ${label} looks too high.` };
+        }
+        sets.push({ set: s + 1, team1: val1, team2: val2 });
+      }
+      if(sets.length === 0) continue;
+      const lineTotal1 = sets.reduce((sum,set)=>sum + set.team1,0);
+      const lineTotal2 = sets.reduce((sum,set)=>sum + set.team2,0);
+      lines.push({ label, g1: lineTotal1, g2: lineTotal2, sets });
+      total1 += lineTotal1;
+      total2 += lineTotal2;
+    }
+    if(lines.length === 0){
+      return { ok:false, msg:'Enter at least one set score.' };
+    }
+    return { ok:true, lines, total1, total2 };
+  }
+
+  function collectDreambreaker(){
+    if(!dreambreakerToggle.checked) return { ok:true, dreambreaker:null };
+    const a = dreambreakerTeam1.value.trim();
+    const b = dreambreakerTeam2.value.trim();
+    if(a === '' || b === ''){
+      return { ok:false, msg:'Enter dreambreaker points for both teams.' };
+    }
     const g1 = Number(a), g2 = Number(b);
-    if(!Number.isInteger(g1) || !Number.isInteger(g2)) return { ok:false, msg:'Enter whole-number games for both teams.' };
-    if(g1<0 || g2<0) return { ok:false, msg:'Games cannot be negative.' };
-    if(g1>40 || g2>40) return { ok:false, msg:'Games look unusually high. Please double check.' };
-    if(g1 === g2) return { ok:false, msg:'Include the tiebreak game so one team has more games.' };
-    return { ok:true };
+    if(!Number.isInteger(g1) || !Number.isInteger(g2)){
+      return { ok:false, msg:'Dreambreaker points must be whole numbers.' };
+    }
+    if(g1 < 0 || g2 < 0){
+      return { ok:false, msg:'Dreambreaker points cannot be negative.' };
+    }
+    if(g1 === g2){
+      return { ok:false, msg:'Dreambreaker cannot end in a tie.' };
+    }
+    if(g1 > 30 || g2 > 30){
+      return { ok:false, msg:'Dreambreaker points look too high.' };
+    }
+    return { ok:true, dreambreaker:{ g1, g2 } };
   }
 
   /* ==========
@@ -397,15 +1067,19 @@
   }
 
   function renderStandings(){
-    const tbody = document.getElementById('standingsBody');
-    const rows = computeStandings();
-
-    if(matches.length === 0){
-      tbody.innerHTML = '<tr><td colspan="9" class="center-cell" style="color:var(--muted);">No results yet. Add a match to see standings.</td></tr>';
+    if(!matchesLoaded){
+      standingsBody.innerHTML = '<tr><td colspan="9" class="center-cell" style="color:var(--muted);">Loading standings from Firebase…</td></tr>';
       return;
     }
 
-    tbody.innerHTML = rows.map((r,i)=>`
+    const rows = computeStandings();
+
+    if(matches.length === 0){
+      standingsBody.innerHTML = '<tr><td colspan="9" class="center-cell" style="color:var(--muted);">No results yet. Add a match to see standings.</td></tr>';
+      return;
+    }
+
+    standingsBody.innerHTML = rows.map((r,i)=>`
       <tr class="${i<4?'qualified':''}">
         <td class="rank-cell">${i+1}</td>
         <td class="team-cell">${r.team}</td>
@@ -421,24 +1095,34 @@
   }
 
   function renderHistory(){
-    const tbody = document.getElementById('historyBody');
-    if(matches.length === 0){
-      tbody.innerHTML = '<tr><td colspan="5" class="center-cell" style="color:var(--muted);">No matches recorded.</td></tr>';
+    if(!matchesLoaded){
+      historyBody.innerHTML = '<tr><td colspan="6" class="center-cell" style="color:var(--muted);">Loading match history from Firebase…</td></tr>';
       return;
     }
-    tbody.innerHTML = matches.map((m,idx)=>`
+    if(matches.length === 0){
+      historyBody.innerHTML = '<tr><td colspan="6" class="center-cell" style="color:var(--muted);">No matches recorded.</td></tr>';
+      return;
+    }
+    historyBody.innerHTML = matches.map((m,idx)=>{
+      const breakdown = Array.isArray(m.lines) && m.lines.length
+        ? `<details><summary>Courts (${m.lines.length})${m.dreambreaker ? ' • Dreambreaker' : ''}</summary>${m.lines.map(line=>{
+            const sets = formatLineSets(line, { html:true });
+            return `${escapeHTML(line.label)}: ${line.g1}-${line.g2}${sets}`;
+          }).join('<br>')}${m.dreambreaker ? `<br><strong>Dreambreaker:</strong> ${m.dreambreaker.g1}-${m.dreambreaker.g2}` : ''}</details>`
+        : (m.dreambreaker ? `Dreambreaker ${m.dreambreaker.g1}-${m.dreambreaker.g2}` : '—');
+      return `
       <tr>
         <td class="rank-cell">${matches.length - idx}</td>
         <td class="team-cell">${m.t1} vs ${m.t2}</td>
         <td class="center-cell">${m.g1}-${m.g2}</td>
         <td class="points-cell">${m.win}</td>
+        <td>${breakdown}</td>
         <td class="center-cell">${new Date(m.ts).toLocaleString()}</td>
       </tr>
-    `).join('');
+    `; }).join('');
   }
 
-  function refresh(){
-    saveMatches(matches);
+  function renderAll(){
     renderStandings();
     renderHistory();
   }
@@ -446,45 +1130,111 @@
   /* ==========
      Actions: Add / Undo / Clear / Import / Export
      ========== */
-  document.getElementById('addBtn').addEventListener('click', () => {
+  document.getElementById('addBtn').addEventListener('click', async () => {
+    if(!matchesLoaded) return alert('Please wait for existing results to load.');
     const a = t1.value.trim(), b = t2.value.trim();
-    const g1 = Number(document.getElementById('team1Games').value);
-    const g2 = Number(document.getElementById('team2Games').value);
-
     if(!a || !b) return alert('Select both teams.');
     if(a === b) return alert('A team cannot play itself.');
-    const v = validateGames(g1,g2);
-    if(!v.ok) return alert('⚠️ ' + v.msg);
 
-    const win = g1 > g2 ? a : b;
-    matches.unshift({ t1:a, t2:b, g1, g2, win, ts: Date.now() });
+    const courts = collectCourtData();
+    if(!courts.ok) return alert('⚠️ ' + courts.msg);
 
-    // Clear inputs
-    t1.value = ''; t2.value = '';
-    document.getElementById('team1Games').value = '';
-    document.getElementById('team2Games').value = '';
+    const dream = collectDreambreaker();
+    if(!dream.ok) return alert('⚠️ ' + dream.msg);
 
-    refresh();
-    alert(`✅ Saved: ${a} ${g1}-${g2} ${b}\nWinner: ${win} (+1 match point)`);
+    const total1 = courts.total1;
+    const total2 = courts.total2;
+
+    let win;
+    if(total1 > total2){
+      win = a;
+    } else if(total2 > total1){
+      win = b;
+    } else {
+      if(!dream.dreambreaker) return alert('⚠️ Totals are tied. Enter the dreambreaker result.');
+      win = dream.dreambreaker.g1 > dream.dreambreaker.g2 ? a : b;
+    }
+
+    const record = {
+      t1:a,
+      t2:b,
+      g1: total1,
+      g2: total2,
+      win,
+      ts: Date.now(),
+      lines: courts.lines
+    };
+    if(dream.dreambreaker) record.dreambreaker = dream.dreambreaker;
+
+    if(!(await guardWriteAccess())) return;
+
+    try {
+      await matchesRef.push(record);
+
+      // Clear inputs after successful save
+      t1.value = '';
+      t2.value = '';
+      clearLineScores();
+      dreambreakerToggle.checked = false;
+      dreambreakerFields.classList.add('hidden');
+      dreambreakerTeam1.value = '';
+      dreambreakerTeam2.value = '';
+
+      const dreamNote = record.dreambreaker ? `\nDreambreaker: ${record.dreambreaker.g1}-${record.dreambreaker.g2}` : '';
+      alert(`✅ Saved: ${a} ${record.g1}-${record.g2} ${b}\nWinner: ${win} (+1 match point)${dreamNote}`);
+    } catch(err){
+      console.error('Failed to save match', err);
+      if(err && err.code === 'PERMISSION_DENIED'){
+        authReady = false;
+        authError = err;
+      }
+      alert('❌ Failed to save match. ' + (err && err.message ? err.message : 'Please try again.'));
+    }
   });
 
-  document.getElementById('undoBtn').addEventListener('click', () => {
+  document.getElementById('undoBtn').addEventListener('click', async () => {
+    if(!matchesLoaded) return alert('Results are still loading.');
     if(matches.length === 0) return alert('Nothing to undo.');
     const last = matches[0];
-    if(!confirm(`Undo last match?\n${last.t1} ${last.g1}-${last.g2} ${last.t2}`)) return;
-    matches.shift();
-    refresh();
+    const courts = Array.isArray(last.lines) && last.lines.length ? '\nCourts: ' + last.lines.map(l=>`${l.label} ${l.g1}-${l.g2}${formatLineSets(l)}`).join(', ') : '';
+    const dream = last.dreambreaker ? `\nDreambreaker ${last.dreambreaker.g1}-${last.dreambreaker.g2}` : '';
+    if(!confirm(`Undo last match?\n${last.t1} ${last.g1}-${last.g2} ${last.t2}${courts}${dream}`)) return;
+    if(!(await guardWriteAccess())) return;
+
+    try {
+      await matchesRef.child(last.id).remove();
+    } catch(err){
+      console.error('Failed to undo match', err);
+      if(err && err.code === 'PERMISSION_DENIED'){
+        authReady = false;
+        authError = err;
+      }
+      alert('❌ Failed to undo match. ' + (err && err.message ? err.message : 'Please try again.'));
+    }
   });
 
-  document.getElementById('clearBtn').addEventListener('click', () => {
+  document.getElementById('clearBtn').addEventListener('click', async () => {
+    if(!matchesLoaded) return alert('Results are still loading.');
     if(matches.length === 0) return alert('Nothing to clear.');
     if(!confirm('Clear ALL match results?')) return;
-    matches = [];
-    refresh();
+    if(!(await guardWriteAccess())) return;
+
+    try {
+      await matchesRef.remove();
+    } catch(err){
+      console.error('Failed to clear matches', err);
+      if(err && err.code === 'PERMISSION_DENIED'){
+        authReady = false;
+        authError = err;
+      }
+      alert('❌ Failed to clear matches. ' + (err && err.message ? err.message : 'Please try again.'));
+    }
   });
 
   document.getElementById('exportBtn').addEventListener('click', () => {
-    const blob = new Blob([JSON.stringify(matches,null,2)], { type:'application/json' });
+    if(!matchesLoaded) return alert('Results are still loading.');
+    const payload = matches.map(({id, ...rest}) => rest);
+    const blob = new Blob([JSON.stringify(payload,null,2)], { type:'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = 'koc-season2-matches.json';
@@ -496,7 +1246,7 @@
     const file = e.target.files[0];
     if(!file) return;
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       try{
         const data = JSON.parse(reader.result);
         if(!Array.isArray(data)) throw new Error('Invalid JSON shape');
@@ -506,17 +1256,36 @@
           if(!u) throw new Error('Malformed match entry (invalid games)');
           if(!TEAMS.includes(u.t1) || !TEAMS.includes(u.t2)) throw new Error('Unknown team in data');
           if(u.win !== u.t1 && u.win !== u.t2) throw new Error('Match is missing a winner');
-          return u;
+          const { id, ...clean } = u;
+          return clean;
         });
-        matches = upgraded;
-        refresh();
+        if(!(await guardWriteAccess())) return;
+
+        if(upgraded.length === 0){
+          await matchesRef.set(null);
+        } else {
+          const updates = {};
+          upgraded.forEach(entry => {
+            const key = matchesRef.push().key;
+            updates[key] = entry;
+          });
+          await matchesRef.set(updates);
+        }
         alert('✅ Import successful.');
       } catch(err){
         console.error(err);
+        if(err && err.code === 'PERMISSION_DENIED'){
+          authReady = false;
+          authError = err;
+        }
         alert('❌ Import failed: ' + err.message);
       } finally {
         e.target.value = '';
       }
+    };
+    reader.onerror = () => {
+      alert('❌ Failed to read file.');
+      e.target.value = '';
     };
     reader.readAsText(file);
   });
@@ -524,7 +1293,7 @@
   /* ==========
      Initial render
      ========== */
-  refresh();
+  renderAll();
 </script>
 </body>
 </html>
