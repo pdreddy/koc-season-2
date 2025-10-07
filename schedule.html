@@ -319,8 +319,9 @@
       const { matches, byeWeek } = getMatchesForTeam(team);
       const pills = matches.map((m, i) => `<span class="pill">vs ${m.opponent} (Week ${m.week}, ${m.day})</span>`).join(' ');
       const bye = byeWeek ? `<span class="pill by">Bye: Week ${byeWeek}</span>` : '';
-      box.innerHTML = `<h3 class="section-title" style="margin-bottom:.5rem;">${team}: ${matches.length} Matches</h3>
-                       <div class="pillrow">${pills} ${bye}</div>`;
+      box.innerHTML = `
+        <div class="pillrow">${pills} ${bye}</div>
+        <h3 class="section-title" style="margin:.5rem 0;">${team}: ${matches.length} Matches</h3>`;
       box.style.display = 'block';
     }
 
