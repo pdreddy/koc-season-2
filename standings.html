@@ -248,7 +248,6 @@
       <input type="password" id="accessCode" placeholder="Enter access code" class="access-input" />
       <button class="btn" id="unlockBtn">Unlock Scoring</button>
     </div>
-    <p class="hint">Use access code <strong>SCORE2025</strong>. Data is saved in <em>Firebase</em>.</p>
   </section>
 
   <!-- Scoring Form -->
@@ -756,7 +755,7 @@
   const scoringForm = document.getElementById('scoringForm');
   document.getElementById('unlockBtn').addEventListener('click', () => {
     const code = (document.getElementById('accessCode').value || '').trim();
-    if(code === 'SCORE2025'){
+    if(code === 'KOCPO#2'){
       scoringForm.classList.remove('hidden');
       document.getElementById('accessCode').value = '';
       alert('✅ Scoring unlocked');
