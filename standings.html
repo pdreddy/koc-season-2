@@ -376,6 +376,7 @@
         <div id="courtLabel"><strong>Court Breakdown</strong> (enter games won per court)</div>
         <div class="line-actions">
           <button type="button" class="btn ghost" id="resetLinesBtn">Reset Courts</button>
+          <button type="button" class="btn ghost" id="crossCourtBtn">Fill Cross Matches</button>
           <button type="button" class="btn ghost" id="addLineBtn">+ Add Court</button>
         </div>
       </div>
@@ -610,6 +611,30 @@
       })
       .map(select => (select.value || '').trim())
       .filter(Boolean);
+  }
+
+  function setLinePlayers(row, team, players){
+    if(!row) return;
+    const mode = row.dataset.mode === 'singles' ? 'singles' : 'doubles';
+    const selects = Array.from(row.querySelectorAll(`.player-select[data-team="${team}"]`));
+    const list = Array.isArray(players)
+      ? players.map(player => typeof player === 'string' ? player : String(player || '')).filter(name => name !== '')
+      : [];
+    if(mode === 'singles'){
+      const target = selects[0];
+      if(target){
+        target.value = list.length ? list[0] : '';
+      }
+    } else {
+      selects.forEach((select, idx) => {
+        if(idx < list.length){
+          select.value = list[idx];
+        } else {
+          select.value = '';
+        }
+      });
+    }
+    updateLineupSummary(row, team);
   }
 
   function enforceUniquePlayers(team){
@@ -1464,6 +1489,7 @@
   const lineContainer = document.getElementById('lineContainer');
   const addLineBtn = document.getElementById('addLineBtn');
   const resetLinesBtn = document.getElementById('resetLinesBtn');
+  const crossCourtBtn = document.getElementById('crossCourtBtn');
   const dreambreakerToggle = document.getElementById('dreambreakerToggle');
   const dreambreakerFields = document.getElementById('dreambreakerFields');
   const dreambreakerTeam1 = document.getElementById('dreambreakerTeam1');
@@ -1744,6 +1770,38 @@
   resetLinesBtn.addEventListener('click', () => {
     addDefaultLines();
   });
+
+  if(crossCourtBtn){
+    crossCourtBtn.addEventListener('click', () => {
+      const rows = Array.from(lineContainer.querySelectorAll('.line-row'));
+      const doublesRows = rows.filter(row => (row.dataset.mode === 'singles' ? 'singles' : 'doubles') === 'doubles');
+      if(doublesRows.length < 4){
+        alert('⚠️ Need at least four doubles courts to fill cross matches.');
+        return;
+      }
+
+      const [court1, court2, court3, court4] = doublesRows;
+      const court1Team1 = getLinePlayers(court1, 1);
+      const court1Team2 = getLinePlayers(court1, 2);
+      const court2Team1 = getLinePlayers(court2, 1);
+      const court2Team2 = getLinePlayers(court2, 2);
+
+      if(court1Team1.length !== 2 || court1Team2.length !== 2 || court2Team1.length !== 2 || court2Team2.length !== 2){
+        alert('⚠️ Complete the pair selections on the first two doubles courts before auto-filling.');
+        return;
+      }
+
+      setLinePlayers(court3, 1, court1Team1);
+      setLinePlayers(court3, 2, court2Team2);
+      setLinePlayers(court4, 1, court2Team1);
+      setLinePlayers(court4, 2, court1Team2);
+
+      enforceUniquePlayers(1);
+      enforceUniquePlayers(2);
+
+      alert('✅ Cross matches filled. Verify the pairings before entering scores.');
+    });
+  }
 
   dreambreakerToggle.addEventListener('change', () => {
     const on = dreambreakerToggle.checked;
