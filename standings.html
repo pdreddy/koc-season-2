@@ -616,34 +616,10 @@
     const container = document.getElementById('lineContainer');
     if(!container) return;
     const selects = Array.from(container.querySelectorAll(`.player-select[data-team="${team}"]`));
-    const taken = new Map();
     selects.forEach(select => {
-      const field = select.closest('.player-field');
-      if(field && field.classList.contains('hidden')) return;
-      const value = (select.value || '').trim();
-      if(!value) return;
-      if(!taken.has(value)) taken.set(value, new Set());
-      taken.get(value).add(select);
-    });
-    const takenNames = new Set(taken.keys());
-    selects.forEach(select => {
-      const current = (select.value || '').trim();
       Array.from(select.options).forEach(option => {
-        if(option.value === ''){
-          option.disabled = false;
-          option.hidden = false;
-          return;
-        }
-        if(option.value === current){
-          option.disabled = false;
-          option.hidden = false;
-        } else if(takenNames.has(option.value)){
-          option.disabled = true;
-          option.hidden = true;
-        } else {
-          option.disabled = false;
-          option.hidden = false;
-        }
+        option.disabled = false;
+        option.hidden = false;
       });
     });
   }
@@ -1781,7 +1757,6 @@
   function collectCourtData(){
     const rows = Array.from(lineContainer.querySelectorAll('.line-row'));
     const lines = [];
-    const usedPlayers = { 1:new Set(), 2:new Set() };
     let total1 = 0, total2 = 0;
     let totalSets1 = 0, totalSets2 = 0;
     for(let i=0; i<rows.length; i++){
@@ -1879,18 +1854,6 @@
           return { ok:false, msg:`${meta2.name} has duplicate players listed on ${label}.` };
         }
       }
-      for(const player of team1Players){
-        if(usedPlayers[1].has(player)){
-          return { ok:false, msg:`${player} is already assigned to another line for ${meta1.name}.` };
-        }
-      }
-      for(const player of team2Players){
-        if(usedPlayers[2].has(player)){
-          return { ok:false, msg:`${player} is already assigned to another line for ${meta2.name}.` };
-        }
-      }
-      team1Players.forEach(player => usedPlayers[1].add(player));
-      team2Players.forEach(player => usedPlayers[2].add(player));
       lines.push({
         label,
         g1: totals.team1,
