@@ -85,6 +85,37 @@
     .match-form{
       display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:1rem; align-items:start; margin-top:.25rem;
     }
+    .lineup-card{
+      margin-top:1rem; background:#fff; border-radius:14px; border:2px solid rgba(34,211,238,.45);
+      padding:1.1rem 1.25rem 1.25rem; box-shadow:inset 0 1px 0 rgba(255,255,255,.6);
+      display:flex; flex-direction:column; gap:1rem;
+    }
+    .lineup-card h3{
+      font-size:1.1rem; display:flex; align-items:center; gap:.5rem; color:#0f172a;
+    }
+    .lineup-card h3 span{ font-size:.9rem; color:#64748b; font-weight:500; }
+    .lineup-grid{
+      display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:.9rem;
+    }
+    .lineup-block{
+      background:linear-gradient(135deg,#f8fafc 0%,#f1f5f9 100%);
+      border:1px dashed rgba(34,211,238,.5); border-radius:12px; padding:.9rem 1rem;
+      display:flex; flex-direction:column; gap:.65rem; position:relative;
+    }
+    .lineup-block::before{
+      content:""; position:absolute; inset:0; border-radius:12px; pointer-events:none;
+      background:linear-gradient(135deg,rgba(34,211,238,.35),rgba(102,126,234,.35)); opacity:.6;
+      -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite:xor; mask-composite:exclude; padding:1px;
+    }
+    .lineup-title{
+      font-weight:800; color:#0f172a; text-transform:uppercase; letter-spacing:.08em; font-size:.72rem;
+    }
+    .lineup-slot{ display:flex; flex-direction:column; gap:.35rem; }
+    .lineup-slot label{ font-size:.75rem; text-transform:uppercase; letter-spacing:.08em; color:#475569; font-weight:700; }
+    .lineup-card .player-select{ padding:.55rem .7rem; border:2px solid rgba(148,163,184,.45); border-radius:10px; font-weight:600; color:#0f172a; }
+    .lineup-note{ font-size:.85rem; color:#475569; }
+    .lineup-note strong{ color:#0f172a; }
     .team-input{
       display:flex; flex-direction:column; gap:.6rem; background:#fff; padding:1rem; border-radius:10px; border:2px solid var(--ring);
     }
@@ -361,16 +392,56 @@
       </div>
     </div>
 
+    <div class="lineup-card" id="lineupCard">
+      <h3>👥 Lineups <span>Choose doubles pairs once per team, plus singles</span></h3>
+      <div class="lineup-grid">
+        <div class="lineup-block" data-team="1">
+          <div class="lineup-title" aria-label="Team 1 lineup">Team 1</div>
+          <div class="lineup-slot">
+            <label for="team1Pair1Player1">Doubles Pair 1</label>
+            <select id="team1Pair1Player1" class="player-select" data-team="1" data-slot="pair1" data-index="0"></select>
+            <select id="team1Pair1Player2" class="player-select" data-team="1" data-slot="pair1" data-index="1"></select>
+          </div>
+          <div class="lineup-slot">
+            <label for="team1Pair2Player1">Doubles Pair 2</label>
+            <select id="team1Pair2Player1" class="player-select" data-team="1" data-slot="pair2" data-index="0"></select>
+            <select id="team1Pair2Player2" class="player-select" data-team="1" data-slot="pair2" data-index="1"></select>
+          </div>
+          <div class="lineup-slot">
+            <label for="team1Singles">Singles</label>
+            <select id="team1Singles" class="player-select" data-team="1" data-slot="singles" data-index="0"></select>
+          </div>
+        </div>
+        <div class="lineup-block" data-team="2">
+          <div class="lineup-title" aria-label="Team 2 lineup">Team 2</div>
+          <div class="lineup-slot">
+            <label for="team2Pair1Player1">Doubles Pair 1</label>
+            <select id="team2Pair1Player1" class="player-select" data-team="2" data-slot="pair1" data-index="0"></select>
+            <select id="team2Pair1Player2" class="player-select" data-team="2" data-slot="pair1" data-index="1"></select>
+          </div>
+          <div class="lineup-slot">
+            <label for="team2Pair2Player1">Doubles Pair 2</label>
+            <select id="team2Pair2Player1" class="player-select" data-team="2" data-slot="pair2" data-index="0"></select>
+            <select id="team2Pair2Player2" class="player-select" data-team="2" data-slot="pair2" data-index="1"></select>
+          </div>
+          <div class="lineup-slot">
+            <label for="team2Singles">Singles</label>
+            <select id="team2Singles" class="player-select" data-team="2" data-slot="singles" data-index="0"></select>
+          </div>
+        </div>
+      </div>
+      <p class="lineup-note">Each doubles pair will automatically play <strong>two</strong> matches across the four courts below: Round 1 versus the matching pair and Round 2 versus the opposite pair. Singles is a <strong>five-set</strong> match.</p>
+    </div>
+
     <div class="line-editor" aria-labelledby="courtLabel">
       <div class="line-header">
         <div id="courtLabel"><strong>Court Breakdown</strong> (enter games won per court)</div>
         <div class="line-actions">
           <button type="button" class="btn ghost" id="resetLinesBtn">Reset Courts</button>
-          <button type="button" class="btn ghost" id="addLineBtn">+ Add Court</button>
         </div>
       </div>
       <div id="lineContainer" class="line-list" aria-live="polite"></div>
-      <p class="line-hint">Leave courts you didn't play empty or remove them. Pick your lineup from each roster, then enter set-by-set games &mdash; if a set ends level, tiebreak boxes will appear so you can record the breaker.</p>
+      <p class="line-hint">After choosing your lineups above, enter set-by-set games for each court. If a set ends level, tiebreak boxes will appear so you can record the breaker.</p>
     </div>
 
     <div class="dreambreaker">
@@ -541,14 +612,233 @@
     Array.from(lineContainer.querySelectorAll('.line-row')).forEach(refreshLineTeamLabelsForRow);
   }
 
+  function uniquePairKeys(config, team){
+    if(!config) return [];
+    const seq = team === 1 ? config.team1Pairs : config.team2Pairs;
+    if(!Array.isArray(seq)) return [];
+    const order = [];
+    seq.forEach(key => {
+      if(key && !order.includes(key)) order.push(key);
+    });
+    return order;
+  }
+
+  function isLineupCompleteForRow(row, team){
+    const config = getRoleConfig(row);
+    if(!config){
+      const players = getLinePlayers(row, team);
+      return players.length > 0;
+    }
+    if(config.type === 'singles'){
+      return Boolean(lineupState[team] && lineupState[team].singles);
+    }
+    const keys = uniquePairKeys(config, team);
+    if(!keys.length) return false;
+    return keys.every(key => {
+      const pair = lineupState[team] && lineupState[team][key];
+      return Array.isArray(pair) && pair.filter(Boolean).length === 2;
+    });
+  }
+
+  function resetLineupForTeam(team){
+    const config = lineupState[team];
+    if(config){
+      config.pair1 = [null, null];
+      config.pair2 = [null, null];
+      config.singles = null;
+    }
+    const selectors = lineupSelects[team];
+    if(selectors){
+      Object.values(selectors).forEach(list => {
+        (Array.isArray(list) ? list : [list]).forEach(select => {
+          if(select){
+            select.value = '';
+          }
+        });
+      });
+    }
+  }
+
+  function enforceLineupUniqueness(team){
+    const selectors = lineupSelects[team];
+    if(!selectors) return;
+    const all = [
+      ...(selectors.pair1 || []),
+      ...(selectors.pair2 || []),
+      ...(selectors.singles || [])
+    ].filter(Boolean);
+    const taken = new Map();
+    all.forEach(select => {
+      const value = (select.value || '').trim();
+      if(!value) return;
+      if(!taken.has(value)) taken.set(value, new Set());
+      taken.get(value).add(select);
+    });
+    const takenNames = new Set(taken.keys());
+    all.forEach(select => {
+      const current = (select.value || '').trim();
+      Array.from(select.options).forEach(option => {
+        if(option.value === ''){
+          option.disabled = false;
+          option.hidden = false;
+          return;
+        }
+        if(option.value === current){
+          option.disabled = false;
+          option.hidden = false;
+        } else if(takenNames.has(option.value)){
+          option.disabled = true;
+          option.hidden = true;
+        } else {
+          option.disabled = false;
+          option.hidden = false;
+        }
+      });
+    });
+  }
+
+  function lineupPlaceholder(slot, index){
+    if(slot === 'singles') return 'Select singles player';
+    return index === 0 ? 'Select player 1' : 'Select player 2';
+  }
+
+  function refreshLineupOptions(team){
+    const selectors = lineupSelects[team];
+    if(!selectors) return;
+    const meta = getSelectedTeamMeta(team);
+    const roster = Array.isArray(meta.roster) ? meta.roster : [];
+    Object.entries(selectors).forEach(([slot, list]) => {
+      const arr = Array.isArray(list) ? list : [list];
+      arr.forEach((select, index) => {
+        if(!select) return;
+        const state = lineupState[team];
+        const existing = slot === 'singles'
+          ? (state && state.singles)
+          : (state && Array.isArray(state[slot]) ? state[slot][index] : null);
+        const previous = select.value || existing || '';
+        select.innerHTML = '';
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = roster.length ? lineupPlaceholder(slot, index) : 'Select team first';
+        select.appendChild(placeholder);
+        roster.forEach(player => {
+          const opt = document.createElement('option');
+          opt.value = player;
+          opt.textContent = player;
+          select.appendChild(opt);
+        });
+        if(previous && roster.includes(previous)){
+          select.value = previous;
+        } else {
+          select.value = '';
+        }
+        if(slot === 'singles'){
+          lineupState[team].singles = select.value ? select.value : null;
+        } else {
+          if(!Array.isArray(lineupState[team][slot])){
+            lineupState[team][slot] = [null, null];
+          }
+          lineupState[team][slot][index] = select.value ? select.value : null;
+        }
+        select.disabled = roster.length === 0;
+      });
+    });
+    enforceLineupUniqueness(team);
+    updateAllLineupSummaries();
+  }
+
+  function updateAllLineupSummaries(){
+    Array.from(lineContainer.querySelectorAll('.line-row')).forEach(row => {
+      updateLineupSummary(row, 1);
+      updateLineupSummary(row, 2);
+    });
+  }
+
+  function handleTeamChange(team){
+    resetLineupForTeam(team);
+    refreshLineupOptions(team);
+    refreshAllLineTeamLabels();
+  }
+
+  Object.entries(lineupSelects).forEach(([teamKey, slots]) => {
+    const team = Number(teamKey);
+    Object.entries(slots).forEach(([slot, list]) => {
+      const arr = Array.isArray(list) ? list : [list];
+      arr.forEach((select, index) => {
+        if(!select) return;
+        select.addEventListener('change', () => {
+          const value = (select.value || '').trim() || null;
+          if(slot === 'singles'){
+            lineupState[team].singles = value;
+          } else {
+            if(!Array.isArray(lineupState[team][slot])){
+              lineupState[team][slot] = [null, null];
+            }
+            lineupState[team][slot][index] = value;
+          }
+          enforceLineupUniqueness(team);
+          updateAllLineupSummaries();
+        });
+      });
+    });
+  });
+
   function inferLineMode(label=''){
     const text = String(label || '').toLowerCase();
     if(text.includes('single')) return 'singles';
     return 'doubles';
   }
 
+  function getRoleConfig(row){
+    if(!row) return null;
+    const role = row.dataset.matchRole;
+    if(role && MATCH_ROLE_DETAILS[role]) return MATCH_ROLE_DETAILS[role];
+    return null;
+  }
+
+  function getMatchPlayers(row, team, matchIdx){
+    const config = getRoleConfig(row);
+    if(config){
+      if(config.type === 'singles'){
+        const player = lineupState[team] && lineupState[team].singles ? lineupState[team].singles : null;
+        return player ? [player] : [];
+      }
+      const pairList = team === 1 ? config.team1Pairs : config.team2Pairs;
+      const key = Array.isArray(pairList) ? pairList[matchIdx] : null;
+      if(!key || !lineupState[team]) return [];
+      const pair = lineupState[team][key];
+      return Array.isArray(pair) ? pair.filter(Boolean) : [];
+    }
+    const selects = Array.from(row.querySelectorAll(`.player-select[data-team="${team}"][data-match="${matchIdx}"]`));
+    return selects.map(select => (select.value || '').trim()).filter(Boolean);
+  }
+
   function getLinePlayers(row, team, { visibleOnly=true } = {}){
     if(!row) return [];
+    const config = getRoleConfig(row);
+    if(config){
+      if(config.type === 'singles'){
+        const player = lineupState[team] && lineupState[team].singles ? lineupState[team].singles : null;
+        return player ? [player] : [];
+      }
+      const pairList = team === 1 ? config.team1Pairs : config.team2Pairs;
+      if(Array.isArray(pairList)){
+        const seen = new Set();
+        const list = [];
+        pairList.forEach(key => {
+          if(!key || !lineupState[team]) return;
+          const pair = lineupState[team][key];
+          if(!Array.isArray(pair)) return;
+          pair.forEach(player => {
+            if(player && !seen.has(player)){
+              seen.add(player);
+              list.push(player);
+            }
+          });
+        });
+        return list;
+      }
+    }
     const selects = Array.from(row.querySelectorAll(`.player-select[data-team="${team}"]`));
     return selects
       .filter(select => {
@@ -601,12 +891,37 @@
     const summary = row.querySelector(`.line-player-summary[data-team="${team}"]`);
     if(!summary) return;
     const meta = getSelectedTeamMeta(team);
-    const players = getLinePlayers(row, team);
     const prefix = meta.abbreviation || meta.name;
-    if(players.length){
-      summary.textContent = `${prefix} lineup: ${players.join(' / ')}`;
+    const config = getRoleConfig(row);
+    let text = '—';
+    if(config){
+      if(config.type === 'singles'){
+        const player = lineupState[team] && lineupState[team].singles ? lineupState[team].singles : null;
+        text = player ? player : '—';
+      } else {
+        const keys = uniquePairKeys(config, team);
+        if(keys.length){
+          const parts = keys.map(key => {
+            const players = lineupState[team] && Array.isArray(lineupState[team][key]) ? lineupState[team][key].filter(Boolean) : [];
+            const label = key === 'pair1' ? 'Pair 1' : key === 'pair2' ? 'Pair 2' : key;
+            return players.length ? `${label}: ${players.join(' / ')}` : `${label}: —`;
+          });
+          if(parts.length) text = parts.join(' • ');
+        }
+      }
     } else {
-      summary.textContent = `${prefix} lineup: —`;
+      const players = getLinePlayers(row, team);
+      if(players.length) text = players.join(' / ');
+    }
+    summary.textContent = `${prefix} lineup: ${text}`;
+    const status = row.querySelector(`.line-team-status[data-team="${team}"]`);
+    if(status){
+      const complete = isLineupCompleteForRow(row, team);
+      status.dataset.defaultStatus = complete ? 'READY' : 'LINEUP';
+      if(!status.dataset.state || status.dataset.state === 'default'){
+        status.textContent = status.dataset.defaultStatus;
+        status.dataset.state = 'default';
+      }
     }
   }
 
@@ -896,24 +1211,60 @@
   }
 
   function formatLinePlayers(line, match){
-    if(!line || !line.players) return '';
+    if(!line) return '';
+    const team1Label = match && match.t1 ? match.t1 : 'Team 1';
+    const team2Label = match && match.t2 ? match.t2 : 'Team 2';
+    if(line.pairings && typeof line.pairings === 'object'){
+      const team1Pairs = Array.isArray(line.pairings.team1) ? line.pairings.team1 : [];
+      const team2Pairs = Array.isArray(line.pairings.team2) ? line.pairings.team2 : [];
+      const length = Math.max(team1Pairs.length, team2Pairs.length);
+      if(length){
+        const rows = [];
+        for(let i = 0; i < length; i++){
+          const left = team1Pairs[i];
+          const right = team2Pairs[i];
+          const matchNumber = Number.isInteger(left && left.match) ? left.match : Number.isInteger(right && right.match) ? right.match : (i + 1);
+          const leftNames = left && Array.isArray(left.players) && left.players.length ? left.players.join(' / ') : '—';
+          const rightNames = right && Array.isArray(right.players) && right.players.length ? right.players.join(' / ') : '—';
+          rows.push(`<span>Match ${matchNumber}: ${escapeHTML(team1Label)} ${escapeHTML(leftNames)} vs ${escapeHTML(team2Label)} ${escapeHTML(rightNames)}</span>`);
+        }
+        return `<div class="line-players">${rows.join('')}</div>`;
+      }
+    }
+    if(!line.players) return '';
     const list1 = Array.isArray(line.players.team1) ? line.players.team1.filter(Boolean) : [];
     const list2 = Array.isArray(line.players.team2) ? line.players.team2.filter(Boolean) : [];
     if(!list1.length && !list2.length) return '';
-    const team1Label = match && match.t1 ? match.t1 : 'Team 1';
-    const team2Label = match && match.t2 ? match.t2 : 'Team 2';
     const left = list1.length ? list1.join(' / ') : '—';
     const right = list2.length ? list2.join(' / ') : '—';
     return `<div class="line-players"><span>${escapeHTML(team1Label)}: ${escapeHTML(left)}</span><span>${escapeHTML(team2Label)}: ${escapeHTML(right)}</span></div>`;
   }
 
   function formatLinePlayersText(line, match){
-    if(!line || !line.players) return '';
+    if(!line) return '';
+    const team1Label = match && match.t1 ? match.t1 : 'Team 1';
+    const team2Label = match && match.t2 ? match.t2 : 'Team 2';
+    if(line.pairings && typeof line.pairings === 'object'){
+      const team1Pairs = Array.isArray(line.pairings.team1) ? line.pairings.team1 : [];
+      const team2Pairs = Array.isArray(line.pairings.team2) ? line.pairings.team2 : [];
+      const length = Math.max(team1Pairs.length, team2Pairs.length);
+      if(length){
+        const parts = [];
+        for(let i = 0; i < length; i++){
+          const left = team1Pairs[i];
+          const right = team2Pairs[i];
+          const matchNumber = Number.isInteger(left && left.match) ? left.match : Number.isInteger(right && right.match) ? right.match : (i + 1);
+          const leftNames = left && Array.isArray(left.players) && left.players.length ? left.players.join(' / ') : '—';
+          const rightNames = right && Array.isArray(right.players) && right.players.length ? right.players.join(' / ') : '—';
+          parts.push(`Match ${matchNumber}: ${team1Label} ${leftNames} vs ${team2Label} ${rightNames}`);
+        }
+        return parts.join('; ');
+      }
+    }
+    if(!line.players) return '';
     const list1 = Array.isArray(line.players.team1) ? line.players.team1.filter(Boolean) : [];
     const list2 = Array.isArray(line.players.team2) ? line.players.team2.filter(Boolean) : [];
     if(!list1.length && !list2.length) return '';
-    const team1Label = match && match.t1 ? match.t1 : 'Team 1';
-    const team2Label = match && match.t2 ? match.t2 : 'Team 2';
     const left = list1.length ? list1.join(' / ') : '—';
     const right = list2.length ? list2.join(' / ') : '—';
     return `${team1Label}: ${left} vs ${team2Label}: ${right}`;
@@ -1081,17 +1432,53 @@
 
   const TEAM_LOOKUP = new Map(TOURNAMENT.teams.map(team => [team.name, team]));
   const TEAMS = TOURNAMENT.teams.map(team => team.name);
+  const MATCH_ROLE_DETAILS = {
+    'round1-court1': {
+      label: 'Round 1 • Court 1',
+      type: 'doubles',
+      tags: ['Round 1', 'Pair 1 vs Pair 1'],
+      team1Pairs: ['pair1'],
+      team2Pairs: ['pair1']
+    },
+    'round1-court2': {
+      label: 'Round 1 • Court 2',
+      type: 'doubles',
+      tags: ['Round 1', 'Pair 2 vs Pair 2'],
+      team1Pairs: ['pair2'],
+      team2Pairs: ['pair2']
+    },
+    'round2-court1': {
+      label: 'Round 2 • Court 1',
+      type: 'doubles',
+      tags: ['Round 2', 'Pair 1 vs Pair 2'],
+      team1Pairs: ['pair1'],
+      team2Pairs: ['pair2']
+    },
+    'round2-court2': {
+      label: 'Round 2 • Court 2',
+      type: 'doubles',
+      tags: ['Round 2', 'Pair 2 vs Pair 1'],
+      team1Pairs: ['pair2'],
+      team2Pairs: ['pair1']
+    },
+    'singles-main': {
+      label: 'Singles • Line 1',
+      type: 'singles',
+      tags: ['Singles', '5 Sets']
+    }
+  };
+
   const DEFAULT_LINES = [
-    { label: 'Doubles Line 1', type: 'doubles' },
-    { label: 'Doubles Line 2', type: 'doubles' },
-    { label: 'Doubles Line 3', type: 'doubles' },
-    { label: 'Doubles Line 4', type: 'doubles' },
-    { label: 'Singles Line 1', type: 'singles' }
+    { role: 'round1-court1' },
+    { role: 'round1-court2' },
+    { role: 'round2-court1' },
+    { role: 'round2-court2' },
+    { role: 'singles-main' }
   ];
   const MAX_SET_GAMES = 4;
   const TIE_TRIGGER_GAMES = Math.max(0, MAX_SET_GAMES - 1);
   const LINE_STRUCTURE = {
-    doubles: { matches: 2, sets: 3 },
+    doubles: { matches: 1, sets: 3 },
     singles: { matches: 1, sets: 5 }
   };
 
@@ -1264,6 +1651,8 @@
       const team2Players = sanitizePlayerList(playersSource.team2 ?? entry.team2Players ?? entry.team2Lineup ?? entry.p2 ?? entry.lineup2);
       const lineType = sanitizeLineType(entry.type ?? entry.mode ?? entry.format, label, team1Players, team2Players);
       const cleanEntry = { label: label || `Court ${clean.length + 1}`, g1, g2, type: lineType };
+      const rawRole = typeof entry.role === 'string' ? entry.role.trim() : '';
+      if(rawRole) cleanEntry.role = rawRole;
       if(sets.length){
         cleanEntry.sets = sets.map(set => {
           const payload = { set:set.set, team1:set.team1, team2:set.team2 };
@@ -1290,6 +1679,28 @@
         cleanEntry.players = {};
         if(team1Players.length) cleanEntry.players.team1 = team1Players;
         if(team2Players.length) cleanEntry.players.team2 = team2Players;
+      }
+      const pairingsSource = entry.pairings && typeof entry.pairings === 'object' ? entry.pairings : null;
+      if(pairingsSource){
+        const cleanedPairings = {};
+        ['team1','team2'].forEach(side => {
+          const list = Array.isArray(pairingsSource[side]) ? pairingsSource[side] : [];
+          const sanitized = list.map(item => {
+            if(!item) return null;
+            const matchValue = Number(item.match ?? item.matchIndex ?? item.index ?? item.num);
+            const playersList = sanitizePlayerList(item.players ?? item.names ?? item.list);
+            if(!playersList.length) return null;
+            const payload = { players: playersList };
+            if(Number.isInteger(matchValue) && matchValue > 0){
+              payload.match = matchValue;
+            }
+            return payload;
+          }).filter(Boolean);
+          if(sanitized.length) cleanedPairings[side] = sanitized;
+        });
+        if((cleanedPairings.team1 && cleanedPairings.team1.length) || (cleanedPairings.team2 && cleanedPairings.team2.length)){
+          cleanEntry.pairings = cleanedPairings;
+        }
       }
       clean.push(cleanEntry);
     });
@@ -1479,19 +1890,46 @@
     t2.innerHTML = opts.replace('Select Team','Select Team 2');
   }
   fillTeams();
-  t1.addEventListener('change', () => refreshAllLineTeamLabels());
-  t2.addEventListener('change', () => refreshAllLineTeamLabels());
+  t1.addEventListener('change', () => handleTeamChange(1));
+  t2.addEventListener('change', () => handleTeamChange(2));
 
   /* ==========
      Court editor helpers
      ========== */
   const lineContainer = document.getElementById('lineContainer');
-  const addLineBtn = document.getElementById('addLineBtn');
   const resetLinesBtn = document.getElementById('resetLinesBtn');
   const dreambreakerToggle = document.getElementById('dreambreakerToggle');
   const dreambreakerFields = document.getElementById('dreambreakerFields');
   const dreambreakerTeam1 = document.getElementById('dreambreakerTeam1');
   const dreambreakerTeam2 = document.getElementById('dreambreakerTeam2');
+  const lineupSelects = {
+    1: {
+      pair1: [
+        document.getElementById('team1Pair1Player1'),
+        document.getElementById('team1Pair1Player2')
+      ],
+      pair2: [
+        document.getElementById('team1Pair2Player1'),
+        document.getElementById('team1Pair2Player2')
+      ],
+      singles: [document.getElementById('team1Singles')]
+    },
+    2: {
+      pair1: [
+        document.getElementById('team2Pair1Player1'),
+        document.getElementById('team2Pair1Player2')
+      ],
+      pair2: [
+        document.getElementById('team2Pair2Player1'),
+        document.getElementById('team2Pair2Player2')
+      ],
+      singles: [document.getElementById('team2Singles')]
+    }
+  };
+  const lineupState = {
+    1: { pair1: [null, null], pair2: [null, null], singles: null },
+    2: { pair1: [null, null], pair2: [null, null], singles: null }
+  };
 
   function buildMatchPrefill(mode, matchesConfig=null, rawSets=[]){
     const structure = getLineStructure(mode);
@@ -1620,8 +2058,20 @@
         }).join('');
         matchTags.classList.remove('hidden');
       } else {
-        matchTags.innerHTML = '';
-        matchTags.classList.add('hidden');
+        let extras = [];
+        if(matchTags.dataset.extraTags){
+          try {
+            const parsed = JSON.parse(matchTags.dataset.extraTags);
+            if(Array.isArray(parsed)) extras = parsed.filter(Boolean);
+          } catch(err){ extras = []; }
+        }
+        if(extras.length){
+          matchTags.innerHTML = extras.map(tag => `<span>${escapeHTML(tag)}</span>`).join('');
+          matchTags.classList.remove('hidden');
+        } else {
+          matchTags.innerHTML = '';
+          matchTags.classList.add('hidden');
+        }
       }
     }
     [1,2].forEach(team => {
@@ -1729,16 +2179,26 @@
     removeBtn.className = 'line-remove';
     removeBtn.title = 'Remove court';
     removeBtn.textContent = '✕';
-    removeBtn.addEventListener('click', () => {
-      row.remove();
-      if(!lineContainer.children.length){
-        addDefaultLines();
-      } else {
-        refreshAllLineTeamLabels();
-      }
-      enforceUniquePlayers(1);
-      enforceUniquePlayers(2);
-    });
+    const fixed = config && config.fixed;
+    if(!fixed){
+      removeBtn.addEventListener('click', () => {
+        row.remove();
+        if(!lineContainer.children.length){
+          addDefaultLines();
+        } else {
+          refreshAllLineTeamLabels();
+        }
+        enforceUniquePlayers(1);
+        enforceUniquePlayers(2);
+      });
+    } else {
+      removeBtn.disabled = true;
+      removeBtn.style.display = 'none';
+    }
+
+    if(config && config.tags && Array.isArray(config.tags) && config.tags.length){
+      labelInput.value = label || config.tags.join(' • ');
+    }
 
     header.append(labelInput, typeSelect, removeBtn);
 
@@ -1747,6 +2207,9 @@
 
     const matchTags = document.createElement('div');
     matchTags.className = 'line-match-tags hidden';
+    if(Array.isArray(config.tags) && config.tags.length){
+      matchTags.dataset.extraTags = JSON.stringify(config.tags);
+    }
     scorecard.appendChild(matchTags);
 
     const setLabels = document.createElement('div');
@@ -1763,19 +2226,28 @@
     const initialMode = initialModeRaw === 'singles' ? 'singles' : 'doubles';
     row.dataset.mode = initialMode;
     typeSelect.value = initialMode;
+    if(fixed){
+      typeSelect.disabled = true;
+      typeSelect.classList.add('disabled');
+    }
+    if(config && typeof config.role === 'string'){
+      row.dataset.matchRole = config.role;
+    }
 
     const matchesConfig = config && typeof config === 'object' ? config.matches : null;
     const prefillMatches = buildMatchPrefill(initialMode, matchesConfig, sets);
 
-    typeSelect.addEventListener('change', () => {
-      const previousMode = row.dataset.mode === 'singles' ? 'singles' : 'doubles';
-      const existingValues = captureLineInputValues(row, previousMode);
-      const nextMode = typeSelect.value === 'singles' ? 'singles' : 'doubles';
-      row.dataset.mode = nextMode;
-      applyPlayerSlotMode(row);
-      refreshLinePlayersForRow(row);
-      renderLineSetStructure(row, previousMode === nextMode ? existingValues : null);
-    });
+    if(!fixed){
+      typeSelect.addEventListener('change', () => {
+        const previousMode = row.dataset.mode === 'singles' ? 'singles' : 'doubles';
+        const existingValues = captureLineInputValues(row, previousMode);
+        const nextMode = typeSelect.value === 'singles' ? 'singles' : 'doubles';
+        row.dataset.mode = nextMode;
+        applyPlayerSlotMode(row);
+        refreshLinePlayersForRow(row);
+        renderLineSetStructure(row, previousMode === nextMode ? existingValues : null);
+      });
+    }
 
     const buildSide = (team) => {
       const side = document.createElement('div');
@@ -1806,38 +2278,6 @@
       infoText.append(name, status);
       info.append(avatar, infoText);
 
-      const playerPicker = document.createElement('div');
-      playerPicker.className = 'player-picker';
-      playerPicker.dataset.team = String(team);
-
-      const savedList = presetPlayers[team];
-      for(let i = 0; i < 2; i++){
-        const field = document.createElement('label');
-        field.className = 'player-field';
-        field.dataset.team = String(team);
-        field.dataset.slot = String(i);
-
-        const slotLabel = document.createElement('span');
-        slotLabel.className = 'player-slot-label';
-        slotLabel.textContent = `Player ${i + 1}`;
-
-        const playerSelect = document.createElement('select');
-        playerSelect.className = 'player-select';
-        playerSelect.dataset.team = String(team);
-        playerSelect.dataset.slot = String(i);
-        playerSelect.disabled = true;
-        if(savedList && savedList[i]){
-          playerSelect.dataset.initialValue = savedList[i];
-        }
-        playerSelect.addEventListener('change', () => {
-          updateLineupSummary(row, team);
-          enforceUniquePlayers(team);
-        });
-
-        field.append(slotLabel, playerSelect);
-        playerPicker.appendChild(field);
-      }
-
       const playerSummary = document.createElement('div');
       playerSummary.className = 'line-player-summary';
       playerSummary.dataset.team = String(team);
@@ -1852,7 +2292,43 @@
       total.dataset.team = String(team);
       total.textContent = '—';
 
-      side.append(info, playerPicker, playerSummary, setInputs, total);
+      if(config && config.disablePlayerPicker){
+        side.append(info, playerSummary, setInputs, total);
+      } else {
+        const playerPicker = document.createElement('div');
+        playerPicker.className = 'player-picker';
+        playerPicker.dataset.team = String(team);
+
+        const savedList = presetPlayers[team];
+        for(let i = 0; i < 2; i++){
+          const field = document.createElement('label');
+          field.className = 'player-field';
+          field.dataset.team = String(team);
+          field.dataset.slot = String(i);
+
+          const slotLabel = document.createElement('span');
+          slotLabel.className = 'player-slot-label';
+          slotLabel.textContent = `Player ${i + 1}`;
+
+          const playerSelect = document.createElement('select');
+          playerSelect.className = 'player-select';
+          playerSelect.dataset.team = String(team);
+          playerSelect.dataset.slot = String(i);
+          playerSelect.disabled = true;
+          if(savedList && savedList[i]){
+            playerSelect.dataset.initialValue = savedList[i];
+          }
+          playerSelect.addEventListener('change', () => {
+            updateLineupSummary(row, team);
+            enforceUniquePlayers(team);
+          });
+
+          field.append(slotLabel, playerSelect);
+          playerPicker.appendChild(field);
+        }
+
+        side.append(info, playerPicker, playerSummary, setInputs, total);
+      }
       return side;
     };
 
@@ -1869,47 +2345,48 @@
     return row;
   }
 
-  function addLine(label=''){
-    const cleanLabel = label || `Court ${lineContainer.children.length + 1}`;
-    const type = inferLineMode(cleanLabel);
-    const row = makeLineRow(cleanLabel, [], { type });
-    lineContainer.appendChild(row);
-    enforceUniquePlayers(1);
-    enforceUniquePlayers(2);
-  }
-
   function addDefaultLines(){
     lineContainer.innerHTML = '';
     DEFAULT_LINES.forEach(entry => {
-      const item = typeof entry === 'string' ? { label: entry } : entry;
-      const row = makeLineRow(item.label, [], { type: item.type || inferLineMode(item.label) });
+      const role = entry.role || '';
+      const meta = MATCH_ROLE_DETAILS[role] || {};
+      const matches = Array.isArray(meta.matchLabels)
+        ? meta.matchLabels.map((label, idx) => ({ label: label || `Match ${idx + 1}` }))
+        : null;
+      const row = makeLineRow(meta.label || entry.label || `Court ${lineContainer.children.length + 1}`, [], {
+        type: meta.type || entry.type || inferLineMode(meta.label || entry.label),
+        tags: meta.tags,
+        role,
+        matches,
+        fixed: true,
+        disablePlayerPicker: true
+      });
       lineContainer.appendChild(row);
     });
     refreshAllLineTeamLabels();
-    enforceUniquePlayers(1);
-    enforceUniquePlayers(2);
+    updateAllLineupSummaries();
   }
 
   function clearLineScores(){
     Array.from(lineContainer.querySelectorAll('.line-row')).forEach(row => {
       row.querySelectorAll('.set-input').forEach(input => { input.value = ''; });
       row.querySelectorAll('.tie-input').forEach(input => { input.value = ''; });
-      row.querySelectorAll('.player-select').forEach(select => { select.value = ''; });
       updateLineupSummary(row, 1);
       updateLineupSummary(row, 2);
       updateLineTotals(row);
     });
-    enforceUniquePlayers(1);
-    enforceUniquePlayers(2);
+    resetLineupForTeam(1);
+    resetLineupForTeam(2);
+    refreshLineupOptions(1);
+    refreshLineupOptions(2);
   }
 
   addDefaultLines();
 
-  addLineBtn.addEventListener('click', () => {
-    const idx = lineContainer.children.length + 1;
-    const row = makeLineRow(`Court ${idx}`);
-    lineContainer.appendChild(row);
-  });
+  refreshLineupOptions(1);
+  refreshLineupOptions(2);
+  updateAllLineupSummaries();
+
   resetLinesBtn.addEventListener('click', () => {
     addDefaultLines();
   });
@@ -1926,7 +2403,6 @@
   function collectCourtData(){
     const rows = Array.from(lineContainer.querySelectorAll('.line-row'));
     const lines = [];
-    const usedPlayers = { 1:new Set(), 2:new Set() };
     let total1 = 0, total2 = 0;
     let totalSets1 = 0, totalSets2 = 0;
     for(let i=0; i<rows.length; i++){
@@ -1934,10 +2410,14 @@
       const labelInput = row.querySelector('.line-label');
       const label = (labelInput && labelInput.value ? labelInput.value : '').trim() || `Court ${i+1}`;
       const mode = row.dataset.mode === 'singles' ? 'singles' : 'doubles';
+      const meta1 = getSelectedTeamMeta(1);
+      const meta2 = getSelectedTeamMeta(2);
+      const roleConfig = getRoleConfig(row);
       const structure = getLineStructure(mode);
       const matchCount = structure.matches;
       const setsPerMatch = structure.sets;
       const matches = [];
+      const pairings = { team1: [], team2: [] };
       for(let matchIdx = 0; matchIdx < matchCount; matchIdx++){
         const matchSets = [];
         let matchSeenAny = false;
@@ -2014,6 +2494,31 @@
       if(mode === 'doubles' && matches.length < matchCount){
         return { ok:false, msg:`Doubles on ${label} includes ${matchCount} matches. Complete each match score.` };
       }
+      for(let matchIdx = 0; matchIdx < matches.length; matchIdx++){
+        const players1 = getMatchPlayers(row, 1, matchIdx);
+        const players2 = getMatchPlayers(row, 2, matchIdx);
+        if(mode === 'singles'){
+          if(players1.length !== 1){
+            return { ok:false, msg:`Select a singles player for ${meta1.name} on ${label}.` };
+          }
+          if(players2.length !== 1){
+            return { ok:false, msg:`Select a singles player for ${meta2.name} on ${label}.` };
+          }
+        } else {
+          const team1Key = roleConfig && Array.isArray(roleConfig.team1Pairs) ? roleConfig.team1Pairs[matchIdx] : null;
+          const team2Key = roleConfig && Array.isArray(roleConfig.team2Pairs) ? roleConfig.team2Pairs[matchIdx] : null;
+          if(players1.length !== 2){
+            const pairLabel = team1Key === 'pair2' ? 'Doubles Pair 2' : 'Doubles Pair 1';
+            return { ok:false, msg:`${meta1.name}: ${pairLabel} needs two players before scoring ${label}.` };
+          }
+          if(players2.length !== 2){
+            const pairLabel = team2Key === 'pair2' ? 'Doubles Pair 2' : 'Doubles Pair 1';
+            return { ok:false, msg:`${meta2.name}: ${pairLabel} needs two players before scoring ${label}.` };
+          }
+        }
+        pairings.team1.push({ match: matchIdx + 1, players: players1.slice() });
+        pairings.team2.push({ match: matchIdx + 1, players: players2.slice() });
+      }
       const flattenedSets = [];
       let totals = { team1:0, team2:0, sets1:0, sets2:0 };
       matches.forEach((match, matchIdx) => {
@@ -2032,41 +2537,6 @@
       });
       const team1Players = getLinePlayers(row, 1);
       const team2Players = getLinePlayers(row, 2);
-      const meta1 = getSelectedTeamMeta(1);
-      const meta2 = getSelectedTeamMeta(2);
-      if(mode === 'singles'){
-        if(team1Players.length !== 1){
-          return { ok:false, msg:`Select a singles player for ${meta1.name} on ${label}.` };
-        }
-        if(team2Players.length !== 1){
-          return { ok:false, msg:`Select a singles player for ${meta2.name} on ${label}.` };
-        }
-      } else {
-        if(team1Players.length !== 2){
-          return { ok:false, msg:`Select two doubles players for ${meta1.name} on ${label}.` };
-        }
-        if(new Set(team1Players).size !== team1Players.length){
-          return { ok:false, msg:`${meta1.name} has duplicate players listed on ${label}.` };
-        }
-        if(team2Players.length !== 2){
-          return { ok:false, msg:`Select two doubles players for ${meta2.name} on ${label}.` };
-        }
-        if(new Set(team2Players).size !== team2Players.length){
-          return { ok:false, msg:`${meta2.name} has duplicate players listed on ${label}.` };
-        }
-      }
-      for(const player of team1Players){
-        if(usedPlayers[1].has(player)){
-          return { ok:false, msg:`${player} is already assigned to another line for ${meta1.name}.` };
-        }
-      }
-      for(const player of team2Players){
-        if(usedPlayers[2].has(player)){
-          return { ok:false, msg:`${player} is already assigned to another line for ${meta2.name}.` };
-        }
-      }
-      team1Players.forEach(player => usedPlayers[1].add(player));
-      team2Players.forEach(player => usedPlayers[2].add(player));
       const matchesPayload = matches.map((match, matchIdx) => ({
         match: match.match || (matchIdx + 1),
         label: match.label,
@@ -2079,7 +2549,7 @@
         })
       }));
 
-      lines.push({
+      const linePayload = {
         label,
         g1: totals.team1,
         g2: totals.team2,
@@ -2088,7 +2558,17 @@
         type: mode,
         setWins: { team1: totals.sets1, team2: totals.sets2 },
         players: { team1: team1Players, team2: team2Players }
-      });
+      };
+      if(row.dataset.matchRole){
+        linePayload.role = row.dataset.matchRole;
+      }
+      if(pairings.team1.length || pairings.team2.length){
+        linePayload.pairings = {
+          team1: pairings.team1.map(entry => ({ match: entry.match, players: entry.players })),
+          team2: pairings.team2.map(entry => ({ match: entry.match, players: entry.players }))
+        };
+      }
+      lines.push(linePayload);
       total1 += totals.team1;
       total2 += totals.team2;
       totalSets1 += totals.sets1;
