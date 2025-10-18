@@ -210,10 +210,20 @@
     .dreambreaker-fields{ display:grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap:.6rem; }
     .dreambreaker-fields .number-input{ width:100%; }
     .dreambreaker-note{ color:var(--muted); font-size:.85rem; }
-    .history-table details{ color:var(--muted); }
-    .history-table details summary{ cursor:pointer; color:#2563eb; font-weight:600; }
-    .history-table details[open]{ padding-top:.35rem; }
-    .history-table details[open] summary{ margin-bottom:.25rem; }
+    .history-breakdown-wrapper{ display:flex; flex-direction:column; gap:.4rem; }
+    .history-toggle{
+      display:inline-flex; align-items:center; gap:.35rem; font-weight:700; color:#2563eb;
+      background:transparent; border:0; cursor:pointer; padding:0; font-size:.95rem;
+    }
+    .history-toggle:hover{ color:#1d4ed8; }
+    .history-toggle:focus{ outline:2px solid rgba(37,99,235,.35); outline-offset:3px; border-radius:6px; }
+    .history-toggle::before{ content:'▸'; transition:transform .2s ease; font-size:.9rem; }
+    .history-toggle[aria-expanded="true"]::before{ transform:rotate(90deg); }
+    .history-breakdown{
+      display:none; background:rgba(148,163,184,.15); border-radius:10px; padding:.65rem .8rem;
+      color:#475569; box-shadow:inset 0 1px 0 rgba(255,255,255,.6);
+    }
+    .history-breakdown.open{ display:block; }
 
     .form-actions{ display:flex; gap:.6rem; justify-content:center; flex-wrap:wrap; margin-top:1rem; }
     .hidden{ display:none; }
@@ -229,6 +239,10 @@
 
     .standings-table tr.qualified{ background:linear-gradient(90deg,#d1fae5 0%, transparent 100%); }
     .standings-table tr.qualified:hover{ background:linear-gradient(90deg,#a7f3d0 0%, #f8fafc 100%); }
+
+    .usage-alert{ background:rgba(254,226,226,.7); }
+    .usage-alert td{ color:#991b1b; font-weight:700; }
+    .usage-alert td:first-child{ font-weight:800; }
 
     .rank-cell{ font-weight:900; }
     .team-cell{ font-weight:800; }
@@ -439,6 +453,48 @@
         </thead>
         <tbody id="historyBody">
         <tr><td colspan="6" class="center-cell" style="color:var(--muted);">No matches recorded.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Player Participation -->
+  <section class="card participation-card">
+    <h2>🧑‍🤝‍🧑 Player Participation</h2>
+    <p class="hint">Unique match days each player has appeared on. Rows highlight in red once a player reaches six days.</p>
+    <div class="table-container">
+      <table class="responsive-table">
+        <thead>
+        <tr>
+          <th>#</th>
+          <th>Team</th>
+          <th>Player</th>
+          <th>Match Days Played</th>
+        </tr>
+        </thead>
+        <tbody id="playerParticipationBody">
+        <tr><td colspan="4" class="center-cell" style="color:var(--muted);">No participation data yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Pair Usage -->
+  <section class="card pair-usage-card">
+    <h2>🎾 Pair Usage</h2>
+    <p class="hint">Counts match days for each doubles pairing. Rows highlight in red once a pair reaches three days together.</p>
+    <div class="table-container">
+      <table class="responsive-table">
+        <thead>
+        <tr>
+          <th>#</th>
+          <th>Team</th>
+          <th>Pair</th>
+          <th>Match Days Together</th>
+        </tr>
+        </thead>
+        <tbody id="pairUsageBody">
+        <tr><td colspan="4" class="center-cell" style="color:var(--muted);">No pair data yet.</td></tr>
         </tbody>
       </table>
     </div>
@@ -904,8 +960,33 @@
 
   const standingsBody = document.getElementById('standingsBody');
   const historyBody = document.getElementById('historyBody');
+  const playerParticipationBody = document.getElementById('playerParticipationBody');
+  const pairUsageBody = document.getElementById('pairUsageBody');
+
+  if(historyBody){
+    historyBody.addEventListener('click', event => {
+      const toggle = event.target.closest('.history-toggle');
+      if(!toggle) return;
+      const wrapper = toggle.closest('[data-breakdown-wrapper]');
+      if(!wrapper) return;
+      const panel = wrapper.querySelector('.history-breakdown');
+      if(!panel) return;
+      const expanded = toggle.getAttribute('aria-expanded') === 'true';
+      const next = !expanded;
+      toggle.setAttribute('aria-expanded', String(next));
+      toggle.textContent = next ? 'Hide breakdown' : 'Show breakdown';
+      panel.classList.toggle('open', next);
+      panel.hidden = !next;
+    });
+  }
   standingsBody.innerHTML = '<tr><td colspan="12" class="center-cell" style="color:var(--muted);">Loading standings from Firebase…</td></tr>';
   historyBody.innerHTML = '<tr><td colspan="6" class="center-cell" style="color:var(--muted);">Loading match history from Firebase…</td></tr>';
+  if(playerParticipationBody){
+    playerParticipationBody.innerHTML = '<tr><td colspan="4" class="center-cell" style="color:var(--muted);">Loading participation data…</td></tr>';
+  }
+  if(pairUsageBody){
+    pairUsageBody.innerHTML = '<tr><td colspan="4" class="center-cell" style="color:var(--muted);">Loading pair usage…</td></tr>';
+  }
 
   let matches = [];
   let matchesLoaded = false;
@@ -1979,28 +2060,147 @@
     historyBody.innerHTML = matches.map((m,idx)=>{
       const matchSets = computeMatchSetTotals(m);
       const setsLabel = (matchSets.team1 + matchSets.team2) > 0 ? ` (${matchSets.team1}-${matchSets.team2} sets)` : '';
-      const breakdown = Array.isArray(m.lines) && m.lines.length
-        ? `<details><summary>Courts (${m.lines.length})${m.dreambreaker ? ' • Dreambreaker' : ''}</summary>${m.lines.map(line=>{
-            const sets = formatLineSets(line, { html:true });
-            const players = formatLinePlayers(line, m);
-            return `<div class="history-line">${escapeHTML(line.label)}: ${line.g1}-${line.g2}${sets}${players}</div>`;
-          }).join('')}${m.dreambreaker ? `<div class="history-line"><strong>Dreambreaker:</strong> ${m.dreambreaker.g1}-${m.dreambreaker.g2}</div>` : ''}</details>`
-        : (m.dreambreaker ? `Dreambreaker ${m.dreambreaker.g1}-${m.dreambreaker.g2}` : '—');
+      const hasLines = Array.isArray(m.lines) && m.lines.length;
+      const breakdownParts = [];
+      if(hasLines){
+        breakdownParts.push(m.lines.map(line=>{
+          const sets = formatLineSets(line, { html:true });
+          const players = formatLinePlayers(line, m);
+          const score = `${Number(line.g1) || 0}-${Number(line.g2) || 0}`;
+          return `<div class="history-line"><strong>${escapeHTML(line.label)}:</strong> ${score}${sets}${players}</div>`;
+        }).join(''));
+      }
+      if(m.dreambreaker){
+        breakdownParts.push(`<div class="history-line"><strong>Dreambreaker:</strong> ${Number(m.dreambreaker.g1) || 0}-${Number(m.dreambreaker.g2) || 0}</div>`);
+      }
+      const breakdownCell = breakdownParts.length
+        ? ((hasLines || breakdownParts.length > 1)
+            ? `<div class="history-breakdown-wrapper" data-breakdown-wrapper>
+                <button type="button" class="history-toggle" aria-expanded="false">Show breakdown</button>
+                <div class="history-breakdown" hidden>${breakdownParts.join('')}</div>
+              </div>`
+            : `<div class="history-breakdown open">${breakdownParts.join('')}</div>`)
+        : '—';
       return `
       <tr>
         <td class="rank-cell" data-label="Match #">${matches.length - idx}</td>
         <td class="team-cell" data-label="Teams">${m.t1} vs ${m.t2}</td>
         <td class="center-cell" data-label="Games (Sets)">${m.g1}-${m.g2}${setsLabel}</td>
         <td class="points-cell" data-label="Winner">${m.win}</td>
-        <td data-label="Breakdown">${breakdown}</td>
+        <td data-label="Breakdown">${breakdownCell}</td>
         <td class="center-cell" data-label="Date/Time">${new Date(m.ts).toLocaleString()}</td>
       </tr>
     `; }).join('');
   }
 
+  function renderParticipationTables(){
+    if(!playerParticipationBody || !pairUsageBody){
+      return;
+    }
+    if(!matchesLoaded){
+      playerParticipationBody.innerHTML = '<tr><td colspan="4" class="center-cell" style="color:var(--muted);">Loading participation data…</td></tr>';
+      pairUsageBody.innerHTML = '<tr><td colspan="4" class="center-cell" style="color:var(--muted);">Loading pair usage…</td></tr>';
+      return;
+    }
+    const hasLineupData = matches.some(match => Array.isArray(match.lines) && match.lines.some(line => {
+      if(!line || !line.players) return false;
+      const left = Array.isArray(line.players.team1) ? line.players.team1.filter(Boolean) : [];
+      const right = Array.isArray(line.players.team2) ? line.players.team2.filter(Boolean) : [];
+      return left.length > 0 || right.length > 0;
+    }));
+    const { players, pairs } = computeParticipationStats();
+    if(players.length === 0){
+      const message = matches.length === 0
+        ? 'No participation data yet.'
+        : (hasLineupData ? 'No participation data yet.' : 'Lineup data is unavailable for the recorded matches.');
+      playerParticipationBody.innerHTML = `<tr><td colspan="4" class="center-cell" style="color:var(--muted);">${message}</td></tr>`;
+    } else {
+      playerParticipationBody.innerHTML = players.map((entry, idx) => `
+        <tr class="${entry.days >= 6 ? 'usage-alert' : ''}">
+          <td class="rank-cell" data-label="#">${idx + 1}</td>
+          <td class="team-cell" data-label="Team">${entry.team}</td>
+          <td data-label="Player">${entry.player}</td>
+          <td class="center-cell" data-label="Match Days">${entry.days}</td>
+        </tr>
+      `).join('');
+    }
+    if(pairs.length === 0){
+      const message = matches.length === 0
+        ? 'No pair data yet.'
+        : (hasLineupData ? 'No pair data yet.' : 'Pairing data is unavailable for the recorded matches.');
+      pairUsageBody.innerHTML = `<tr><td colspan="4" class="center-cell" style="color:var(--muted);">${message}</td></tr>`;
+    } else {
+      pairUsageBody.innerHTML = pairs.map((entry, idx) => `
+        <tr class="${entry.days >= 3 ? 'usage-alert' : ''}">
+          <td class="rank-cell" data-label="#">${idx + 1}</td>
+          <td class="team-cell" data-label="Team">${entry.team}</td>
+          <td data-label="Pair">${entry.pair}</td>
+          <td class="center-cell" data-label="Match Days">${entry.days}</td>
+        </tr>
+      `).join('');
+    }
+  }
+
+  function computeParticipationStats(){
+    const playerMap = new Map();
+    const pairMap = new Map();
+    for(const match of matches){
+      const ts = Number(match && match.ts);
+      if(!Number.isFinite(ts)) continue;
+      const dateKey = new Date(ts).toISOString().split('T')[0];
+      if(!dateKey) continue;
+      const teams = [
+        { key: 'team1', name: match.t1 || 'Team 1' },
+        { key: 'team2', name: match.t2 || 'Team 2' }
+      ];
+      const seenPairsThisMatch = { team1: new Set(), team2: new Set() };
+      if(!Array.isArray(match.lines)) continue;
+      for(const line of match.lines){
+        if(!line || !line.players) continue;
+        for(const team of teams){
+          const roster = Array.isArray(line.players[team.key]) ? line.players[team.key] : [];
+          if(!roster.length) continue;
+          roster.filter(Boolean).forEach(player => {
+            const name = typeof player === 'string' ? player : String(player);
+            const mapKey = `${team.name}|||${name}`;
+            if(!playerMap.has(mapKey)){
+              playerMap.set(mapKey, { team: team.name, player: name, days: new Set() });
+            }
+            playerMap.get(mapKey).days.add(dateKey);
+          });
+          if(line.type === 'singles') continue;
+          if(roster.length < 2) continue;
+          const normalizedPair = roster.slice(0,2).map(p => typeof p === 'string' ? p : String(p)).filter(Boolean).sort();
+          if(normalizedPair.length < 2) continue;
+          const pairKey = normalizedPair.join('|||');
+          if(seenPairsThisMatch[team.key].has(pairKey)) continue;
+          seenPairsThisMatch[team.key].add(pairKey);
+          const mapKey = `${team.name}|||${pairKey}`;
+          const display = `${normalizedPair[0]} & ${normalizedPair[1]}`;
+          if(!pairMap.has(mapKey)){
+            pairMap.set(mapKey, { team: team.name, pair: display, days: new Set() });
+          }
+          pairMap.get(mapKey).days.add(dateKey);
+        }
+      }
+    }
+    const players = Array.from(playerMap.values()).map(entry => ({
+      team: entry.team,
+      player: entry.player,
+      days: entry.days.size
+    })).sort((a,b) => (b.days - a.days) || a.team.localeCompare(b.team) || a.player.localeCompare(b.player));
+    const pairs = Array.from(pairMap.values()).map(entry => ({
+      team: entry.team,
+      pair: entry.pair,
+      days: entry.days.size
+    })).sort((a,b) => (b.days - a.days) || a.team.localeCompare(b.team) || a.pair.localeCompare(b.pair));
+    return { players, pairs };
+  }
+
   function renderAll(){
     renderStandings();
     renderHistory();
+    renderParticipationTables();
   }
 
   /* ==========
