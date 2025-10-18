@@ -210,10 +210,20 @@
     .dreambreaker-fields{ display:grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap:.6rem; }
     .dreambreaker-fields .number-input{ width:100%; }
     .dreambreaker-note{ color:var(--muted); font-size:.85rem; }
-    .history-table details{ color:var(--muted); }
-    .history-table details summary{ cursor:pointer; color:#2563eb; font-weight:600; }
-    .history-table details[open]{ padding-top:.35rem; }
-    .history-table details[open] summary{ margin-bottom:.25rem; }
+    .history-breakdown-wrapper{ display:flex; flex-direction:column; gap:.4rem; }
+    .history-toggle{
+      display:inline-flex; align-items:center; gap:.35rem; font-weight:700; color:#2563eb;
+      background:transparent; border:0; cursor:pointer; padding:0; font-size:.95rem;
+    }
+    .history-toggle:hover{ color:#1d4ed8; }
+    .history-toggle:focus{ outline:2px solid rgba(37,99,235,.35); outline-offset:3px; border-radius:6px; }
+    .history-toggle::before{ content:'▸'; transition:transform .2s ease; font-size:.9rem; }
+    .history-toggle[aria-expanded="true"]::before{ transform:rotate(90deg); }
+    .history-breakdown{
+      display:none; background:rgba(148,163,184,.15); border-radius:10px; padding:.65rem .8rem;
+      color:#475569; box-shadow:inset 0 1px 0 rgba(255,255,255,.6);
+    }
+    .history-breakdown.open{ display:block; }
 
     .form-actions{ display:flex; gap:.6rem; justify-content:center; flex-wrap:wrap; margin-top:1rem; }
     .hidden{ display:none; }
@@ -904,6 +914,23 @@
 
   const standingsBody = document.getElementById('standingsBody');
   const historyBody = document.getElementById('historyBody');
+
+  if(historyBody){
+    historyBody.addEventListener('click', event => {
+      const toggle = event.target.closest('.history-toggle');
+      if(!toggle) return;
+      const wrapper = toggle.closest('[data-breakdown-wrapper]');
+      if(!wrapper) return;
+      const panel = wrapper.querySelector('.history-breakdown');
+      if(!panel) return;
+      const expanded = toggle.getAttribute('aria-expanded') === 'true';
+      const next = !expanded;
+      toggle.setAttribute('aria-expanded', String(next));
+      toggle.textContent = next ? 'Hide breakdown' : 'Show breakdown';
+      panel.classList.toggle('open', next);
+      panel.hidden = !next;
+    });
+  }
   standingsBody.innerHTML = '<tr><td colspan="12" class="center-cell" style="color:var(--muted);">Loading standings from Firebase…</td></tr>';
   historyBody.innerHTML = '<tr><td colspan="6" class="center-cell" style="color:var(--muted);">Loading match history from Firebase…</td></tr>';
 
@@ -1979,20 +2006,34 @@
     historyBody.innerHTML = matches.map((m,idx)=>{
       const matchSets = computeMatchSetTotals(m);
       const setsLabel = (matchSets.team1 + matchSets.team2) > 0 ? ` (${matchSets.team1}-${matchSets.team2} sets)` : '';
-      const breakdown = Array.isArray(m.lines) && m.lines.length
-        ? `<details><summary>Courts (${m.lines.length})${m.dreambreaker ? ' • Dreambreaker' : ''}</summary>${m.lines.map(line=>{
-            const sets = formatLineSets(line, { html:true });
-            const players = formatLinePlayers(line, m);
-            return `<div class="history-line">${escapeHTML(line.label)}: ${line.g1}-${line.g2}${sets}${players}</div>`;
-          }).join('')}${m.dreambreaker ? `<div class="history-line"><strong>Dreambreaker:</strong> ${m.dreambreaker.g1}-${m.dreambreaker.g2}</div>` : ''}</details>`
-        : (m.dreambreaker ? `Dreambreaker ${m.dreambreaker.g1}-${m.dreambreaker.g2}` : '—');
+      const hasLines = Array.isArray(m.lines) && m.lines.length;
+      const breakdownParts = [];
+      if(hasLines){
+        breakdownParts.push(m.lines.map(line=>{
+          const sets = formatLineSets(line, { html:true });
+          const players = formatLinePlayers(line, m);
+          const score = `${Number(line.g1) || 0}-${Number(line.g2) || 0}`;
+          return `<div class="history-line"><strong>${escapeHTML(line.label)}:</strong> ${score}${sets}${players}</div>`;
+        }).join(''));
+      }
+      if(m.dreambreaker){
+        breakdownParts.push(`<div class="history-line"><strong>Dreambreaker:</strong> ${Number(m.dreambreaker.g1) || 0}-${Number(m.dreambreaker.g2) || 0}</div>`);
+      }
+      const breakdownCell = breakdownParts.length
+        ? ((hasLines || breakdownParts.length > 1)
+            ? `<div class="history-breakdown-wrapper" data-breakdown-wrapper>
+                <button type="button" class="history-toggle" aria-expanded="false">Show breakdown</button>
+                <div class="history-breakdown" hidden>${breakdownParts.join('')}</div>
+              </div>`
+            : `<div class="history-breakdown open">${breakdownParts.join('')}</div>`)
+        : '—';
       return `
       <tr>
         <td class="rank-cell" data-label="Match #">${matches.length - idx}</td>
         <td class="team-cell" data-label="Teams">${m.t1} vs ${m.t2}</td>
         <td class="center-cell" data-label="Games (Sets)">${m.g1}-${m.g2}${setsLabel}</td>
         <td class="points-cell" data-label="Winner">${m.win}</td>
-        <td data-label="Breakdown">${breakdown}</td>
+        <td data-label="Breakdown">${breakdownCell}</td>
         <td class="center-cell" data-label="Date/Time">${new Date(m.ts).toLocaleString()}</td>
       </tr>
     `; }).join('');
