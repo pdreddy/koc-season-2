@@ -615,35 +615,42 @@
   function enforceUniquePlayers(team){
     const container = document.getElementById('lineContainer');
     if(!container) return;
-    const selects = Array.from(container.querySelectorAll(`.player-select[data-team="${team}"]`));
-    const taken = new Map();
-    selects.forEach(select => {
-      const field = select.closest('.player-field');
-      if(field && field.classList.contains('hidden')) return;
-      const value = (select.value || '').trim();
-      if(!value) return;
-      if(!taken.has(value)) taken.set(value, new Set());
-      taken.get(value).add(select);
-    });
-    const takenNames = new Set(taken.keys());
-    selects.forEach(select => {
-      const current = (select.value || '').trim();
-      Array.from(select.options).forEach(option => {
-        if(option.value === ''){
-          option.disabled = false;
-          option.hidden = false;
-          return;
-        }
-        if(option.value === current){
-          option.disabled = false;
-          option.hidden = false;
-        } else if(takenNames.has(option.value)){
-          option.disabled = true;
-          option.hidden = true;
-        } else {
-          option.disabled = false;
-          option.hidden = false;
-        }
+    const rows = Array.from(container.querySelectorAll('.line-row'));
+    rows.forEach(row => {
+      const selects = Array.from(row.querySelectorAll(`.player-select[data-team="${team}"]`));
+      if(!selects.length) return;
+      const taken = new Map();
+      selects.forEach(select => {
+        const field = select.closest('.player-field');
+        if(field && field.classList.contains('hidden')) return;
+        const value = (select.value || '').trim();
+        if(!value) return;
+        if(!taken.has(value)) taken.set(value, new Set());
+        taken.get(value).add(select);
+      });
+      selects.forEach(select => {
+        const current = (select.value || '').trim();
+        Array.from(select.options).forEach(option => {
+          if(option.value === ''){
+            option.disabled = false;
+            option.hidden = false;
+            return;
+          }
+          if(option.value === current){
+            option.disabled = false;
+            option.hidden = false;
+            return;
+          }
+          if(!taken.has(option.value)){
+            option.disabled = false;
+            option.hidden = false;
+            return;
+          }
+          const owners = taken.get(option.value);
+          const usedByOther = owners && Array.from(owners).some(other => other !== select);
+          option.disabled = Boolean(usedByOther);
+          option.hidden = Boolean(usedByOther);
+        });
       });
     });
   }
