@@ -322,7 +322,7 @@
   <nav id="siteNav" class="nav" aria-label="Primary">
     <!-- Order you asked for: Teams → Schedule → Rules → Standings -->
     <a href="index.html">👥 Teams</a>
-    <a href="index22.html">📅 Schedule</a>
+    <a href="schedule.html">📅 Schedule</a>
     <a href="rules.html">📋 Rules</a>
     <a href="standings.html" aria-current="page">📊 Standings</a>
   </nav>
@@ -1479,8 +1479,31 @@
     t2.innerHTML = opts.replace('Select Team','Select Team 2');
   }
   fillTeams();
-  t1.addEventListener('change', () => refreshAllLineTeamLabels());
-  t2.addEventListener('change', () => refreshAllLineTeamLabels());
+
+  function updateTeamSelects(){
+    const t1Val = t1.value;
+    const t2Val = t2.value;
+
+    Array.from(t1.options).forEach(option => {
+      option.disabled = !!(option.value && option.value === t2Val);
+    });
+
+    Array.from(t2.options).forEach(option => {
+      option.disabled = !!(option.value && option.value === t1Val);
+    });
+  }
+
+  t1.addEventListener('change', () => {
+    updateTeamSelects();
+    refreshAllLineTeamLabels();
+  });
+
+  t2.addEventListener('change', () => {
+    updateTeamSelects();
+    refreshAllLineTeamLabels();
+  });
+
+  updateTeamSelects();
 
   /* ==========
      Court editor helpers
