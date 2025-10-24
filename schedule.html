@@ -70,6 +70,7 @@
           border:2px solid #f6e05e;border-radius:12px;text-align:center;color:#744210;font-weight:800;}
         .break{text-align:center;padding:1.5rem;background:linear-gradient(135deg,#fed7d7,#feb2b2);
           border-radius:16px;color:#742a2a;box-shadow:0 4px 10px rgba(0,0,0,.1);}
+        .hidden{display:none;}
     </style>
 </head>
 
@@ -124,56 +125,55 @@
         bye:"Rally Royals"},
       { week:2, dates:"Oct 24 (Fri) – Oct 25 (Sat)", matches:[
         {teams:["Rally Royals","Court Conquerors"],captains:["Yogesh","Rajasekhar Chintha"],day:"FRI",time:"5:00 PM"},
-        {teams:["Spin Kings","Chill Titans"],captains:["Uma V","Satish Orugunta"],day:"FRI",time:"6:00 PM"},
-        {teams:["KOC Challengers","Agni Aces"],captains:["Narayan Prasad","Vinod Aripaka"],day:"SAT",time:"5:00 PM"},
-        {teams:["Rally Squad","Mega Lions"],captains:["Manish Jangid","Anil Kunda"],day:"SAT",time:"6:00 PM"}],
-        bye:"Karna's Crusaders"},
-      { week:3, dates:"Oct 31 (Fri) – Nov 1 (Sat)", matches:[
-        {teams:["Rally Royals","Karna's Crusaders"],captains:["Yogesh","Srikanth"],day:"FRI",time:"5:00 PM"},
-        {teams:["Court Conquerors","Mega Lions"],captains:["Rajasekhar Chintha","Anil Kunda"],day:"FRI",time:"6:00 PM"},
-        {teams:["KOC Challengers","Rally Squad"],captains:["Narayan Prasad","Manish Jangid"],day:"SAT",time:"5:00 PM"},
-        {teams:["Agni Aces","Chill Titans"],captains:["Vinod Aripaka","Satish Orugunta"],day:"SAT",time:"6:00 PM"}],
-        bye:"Spin Kings"},
-      { week:4, dates:"Nov 7 (Fri) – Nov 8 (Sat)", matches:[
-        {teams:["Rally Royals","Spin Kings"],captains:["Yogesh","Uma V"],day:"FRI",time:"5:00 PM"},
-        {teams:["Karna's Crusaders","Mega Lions"],captains:["Srikanth","Anil Kunda"],day:"FRI",time:"6:00 PM"},
-        {teams:["Court Conquerors","Agni Aces"],captains:["Rajasekhar Chintha","Vinod Aripaka"],day:"SAT",time:"5:00 PM"},
-        {teams:["Rally Squad","Chill Titans"],captains:["Manish Jangid","Satish Orugunta"],day:"SAT",time:"6:00 PM"}],
-        bye:"KOC Challengers"},
-      { week:5, dates:"Nov 14 (Fri) – Nov 15 (Sat)", matches:[
-        {teams:["Rally Royals","KOC Challengers"],captains:["Yogesh","Narayan Prasad"],day:"FRI",time:"5:00 PM"},
-        {teams:["Karna's Crusaders","Spin Kings"],captains:["Srikanth","Uma V"],day:"FRI",time:"6:00 PM"},
-        {teams:["Court Conquerors","Agni Aces"],captains:["Rajasekhar Chintha","Vinod Aripaka"],day:"SAT",time:"5:00 PM"},
-        {teams:["Mega Lions","Chill Titans"],captains:["Anil Kunda","Satish Orugunta"],day:"SAT",time:"6:00 PM"}],
-        bye:"Rally Squad"},
-      { week:6, dates:"Nov 21 (Fri) – Nov 22 (Sat)", matches:[
-        {teams:["Rally Royals","Rally Squad"],captains:["Yogesh","Manish Jangid"],day:"FRI",time:"5:00 PM"},
-        {teams:["Karna's Crusaders","KOC Challengers"],captains:["Srikanth","Narayan Prasad"],day:"FRI",time:"6:00 PM"},
-        {teams:["Spin Kings","Court Conquerors"],captains:["Uma V","Rajasekhar Chintha"],day:"SAT",time:"5:00 PM"},
-        {teams:["Chill Titans","Mega Lions"],captains:["Satish Orugunta","Anil Kunda"],day:"SAT",time:"6:00 PM"}],
-        bye:"Agni Aces"},
-      { break:true, icon:"🦃", text:"Thanksgiving Break", dates:"Nov 28–29"},
-      { week:7, dates:"Dec 5 (Fri) – Dec 6 (Sat)", matches:[
-        {teams:["Rally Royals","Agni Aces"],captains:["Yogesh","Vinod Aripaka"],day:"FRI",time:"5:00 PM"},
-        {teams:["Karna's Crusaders","Rally Squad"],captains:["Srikanth","Manish Jangid"],day:"FRI",time:"6:00 PM"},
-        {teams:["Spin Kings","KOC Challengers"],captains:["Uma V","Narayan Prasad"],day:"SAT",time:"5:00 PM"},
-        {teams:["Court Conquerors","Mega Lions"],captains:["Rajasekhar Chintha","Anil Kunda"],day:"SAT",time:"6:00 PM"}],
-        bye:"Chill Titans"},
-      { week:8, dates:"Dec 12 (Fri) – Dec 13 (Sat)", matches:[
-        {teams:["Rally Royals","Chill Titans"],captains:["Yogesh","Satish Orugunta"],day:"FRI",time:"5:00 PM"},
-        {teams:["Karna's Crusaders","Agni Aces"],captains:["Srikanth","Vinod Aripaka"],day:"FRI",time:"6:00 PM"},
-        {teams:["Spin Kings","Rally Squad"],captains:["Uma V","Manish Jangid"],day:"SAT",time:"5:00 PM"},
-        {teams:["KOC Challengers","Court Conquerors"],captains:["Narayan Prasad","Rajasekhar Chintha"],day:"SAT",time:"6:00 PM"}],
-        bye:"Mega Lions"},
-      { week:9, dates:"Dec 19 (Fri) – Dec 20 (Sat)", matches:[
-        {teams:["Rally Royals","Mega Lions"],captains:["Yogesh","Anil Kunda"],day:"FRI",time:"5:00 PM"},
         {teams:["Karna's Crusaders","Chill Titans"],captains:["Srikanth","Satish Orugunta"],day:"FRI",time:"6:00 PM"},
         {teams:["Spin Kings","Agni Aces"],captains:["Uma V","Vinod Aripaka"],day:"SAT",time:"5:00 PM"},
         {teams:["KOC Challengers","Rally Squad"],captains:["Narayan Prasad","Manish Jangid"],day:"SAT",time:"6:00 PM"}],
+        bye:"Mega Lions"},
+      { week:3, dates:"Oct 31 (Fri) – Nov 1 (Sat)", matches:[
+        {teams:["Rally Royals","Mega Lions"],captains:["Yogesh","Anil Kunda"],day:"FRI",time:"5:00 PM"},
+        {teams:["Court Conquerors","Chill Titans"],captains:["Rajasekhar Chintha","Satish Orugunta"],day:"FRI",time:"6:00 PM"},
+        {teams:["Karna's Crusaders","Rally Squad"],captains:["Srikanth","Manish Jangid"],day:"SAT",time:"5:00 PM"},
+        {teams:["Spin Kings","KOC Challengers"],captains:["Uma V","Narayan Prasad"],day:"SAT",time:"6:00 PM"}],
+        bye:"Agni Aces"},
+      { week:4, dates:"Nov 7 (Fri) – Nov 8 (Sat)", matches:[
+        {teams:["Rally Royals","Chill Titans"],captains:["Yogesh","Satish Orugunta"],day:"FRI",time:"5:00 PM"},
+        {teams:["Mega Lions","Agni Aces"],captains:["Anil Kunda","Vinod Aripaka"],day:"FRI",time:"6:00 PM"},
+        {teams:["Court Conquerors","Rally Squad"],captains:["Rajasekhar Chintha","Manish Jangid"],day:"SAT",time:"5:00 PM"},
+        {teams:["Karna's Crusaders","Spin Kings"],captains:["Srikanth","Uma V"],day:"SAT",time:"6:00 PM"}],
+        bye:"KOC Challengers"},
+      { week:5, dates:"Nov 14 (Fri) – Nov 15 (Sat)", matches:[
+        {teams:["Rally Royals","Agni Aces"],captains:["Yogesh","Vinod Aripaka"],day:"FRI",time:"5:00 PM"},
+        {teams:["Chill Titans","Rally Squad"],captains:["Satish Orugunta","Manish Jangid"],day:"FRI",time:"6:00 PM"},
+        {teams:["Mega Lions","KOC Challengers"],captains:["Anil Kunda","Narayan Prasad"],day:"SAT",time:"5:00 PM"},
+        {teams:["Court Conquerors","Spin Kings"],captains:["Rajasekhar Chintha","Uma V"],day:"SAT",time:"6:00 PM"}],
+        bye:"Karna's Crusaders"},
+      { week:6, dates:"Nov 21 (Fri) – Nov 22 (Sat)", matches:[
+        {teams:["Rally Royals","Rally Squad"],captains:["Yogesh","Manish Jangid"],day:"FRI",time:"5:00 PM"},
+        {teams:["Agni Aces","KOC Challengers"],captains:["Vinod Aripaka","Narayan Prasad"],day:"FRI",time:"6:00 PM"},
+        {teams:["Chill Titans","Spin Kings"],captains:["Satish Orugunta","Uma V"],day:"SAT",time:"5:00 PM"},
+        {teams:["Mega Lions","Karna's Crusaders"],captains:["Anil Kunda","Srikanth"],day:"SAT",time:"6:00 PM"}],
         bye:"Court Conquerors"},
+      { break:true, icon:"🦃", text:"Thanksgiving Break", dates:"Nov 28–29"},
+      { week:7, dates:"Dec 5 (Fri) – Dec 6 (Sat)", matches:[
+        {teams:["Rally Royals","KOC Challengers"],captains:["Yogesh","Narayan Prasad"],day:"FRI",time:"5:00 PM"},
+        {teams:["Rally Squad","Spin Kings"],captains:["Manish Jangid","Uma V"],day:"FRI",time:"6:00 PM"},
+        {teams:["Agni Aces","Karna's Crusaders"],captains:["Vinod Aripaka","Srikanth"],day:"SAT",time:"5:00 PM"},
+        {teams:["Mega Lions","Court Conquerors"],captains:["Anil Kunda","Rajasekhar Chintha"],day:"SAT",time:"6:00 PM"}],
+        bye:"Chill Titans"},
+      { week:8, dates:"Dec 12 (Fri) – Dec 13 (Sat)", matches:[
+        {teams:["Rally Royals","Spin Kings"],captains:["Yogesh","Uma V"],day:"FRI",time:"5:00 PM"},
+        {teams:["KOC Challengers","Karna's Crusaders"],captains:["Narayan Prasad","Srikanth"],day:"FRI",time:"6:00 PM"},
+        {teams:["Agni Aces","Court Conquerors"],captains:["Vinod Aripaka","Rajasekhar Chintha"],day:"SAT",time:"5:00 PM"},
+        {teams:["Chill Titans","Mega Lions"],captains:["Satish Orugunta","Anil Kunda"],day:"SAT",time:"6:00 PM"}],
+        bye:"Rally Squad"},
+      { week:9, dates:"Dec 19 (Fri) – Dec 20 (Sat)", matches:[
+        {teams:["Rally Royals","Karna's Crusaders"],captains:["Yogesh","Srikanth"],day:"FRI",time:"5:00 PM"},
+        {teams:["KOC Challengers","Court Conquerors"],captains:["Narayan Prasad","Rajasekhar Chintha"],day:"FRI",time:"6:00 PM"},
+        {teams:["Rally Squad","Mega Lions"],captains:["Manish Jangid","Anil Kunda"],day:"SAT",time:"5:00 PM"},
+        {teams:["Agni Aces","Chill Titans"],captains:["Vinod Aripaka","Satish Orugunta"],day:"SAT",time:"6:00 PM"}],
+        bye:"Spin Kings"},
       { break:true, icon:"🎄", text:"Holiday Break", dates:"Dec 26–27, Jan 2–3 & Jan 9–10"}
     ];
-
     /* === Helpers === */
     function getMatchesForTeam(team){
       const matches=[]; let byeWeek=null;
@@ -214,7 +214,7 @@
         }
         let visible=false;
         const matches=item.matches.map(m=>{
-          const show=(filter==="all"||m.teams.some(t=>t.includes(filter)));
+          const show=(filter==="all"||m.teams.some(t=>t===filter));
           if(show)visible=true;
           const cls=m.day==="FRI"?"fri":"sat";
           return `<div class="match ${cls} ${show?'':'hidden'}">
@@ -223,7 +223,7 @@
             <div class="vs">vs</div><div class="team">${m.teams[1]} <span class="capt">(${m.captains[1]})</span></div></div>
           </div>`;
         }).join("");
-        const showBye=(filter==="all"||item.bye.includes(filter));
+        const showBye=(filter==="all"||item.bye===filter);
         if(filter!=="all"&&!visible&&!showBye)return;
         weeks.insertAdjacentHTML("beforeend",`
           <section class="week" id="week${item.week}">
