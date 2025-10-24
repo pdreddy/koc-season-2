@@ -376,6 +376,7 @@
         <div id="courtLabel"><strong>Court Breakdown</strong> (enter games won per court)</div>
         <div class="line-actions">
           <button type="button" class="btn ghost" id="resetLinesBtn">Reset Courts</button>
+          <button type="button" class="btn ghost" id="crossCourtBtn">Fill Cross Matches</button>
           <button type="button" class="btn ghost" id="addLineBtn">+ Add Court</button>
         </div>
       </div>
@@ -612,38 +613,38 @@
       .filter(Boolean);
   }
 
+  function setLinePlayers(row, team, players){
+    if(!row) return;
+    const mode = row.dataset.mode === 'singles' ? 'singles' : 'doubles';
+    const selects = Array.from(row.querySelectorAll(`.player-select[data-team="${team}"]`));
+    const list = Array.isArray(players)
+      ? players.map(player => typeof player === 'string' ? player : String(player || '')).filter(name => name !== '')
+      : [];
+    if(mode === 'singles'){
+      const target = selects[0];
+      if(target){
+        target.value = list.length ? list[0] : '';
+      }
+    } else {
+      selects.forEach((select, idx) => {
+        if(idx < list.length){
+          select.value = list[idx];
+        } else {
+          select.value = '';
+        }
+      });
+    }
+    updateLineupSummary(row, team);
+  }
+
   function enforceUniquePlayers(team){
     const container = document.getElementById('lineContainer');
     if(!container) return;
     const selects = Array.from(container.querySelectorAll(`.player-select[data-team="${team}"]`));
-    const taken = new Map();
     selects.forEach(select => {
-      const field = select.closest('.player-field');
-      if(field && field.classList.contains('hidden')) return;
-      const value = (select.value || '').trim();
-      if(!value) return;
-      if(!taken.has(value)) taken.set(value, new Set());
-      taken.get(value).add(select);
-    });
-    const takenNames = new Set(taken.keys());
-    selects.forEach(select => {
-      const current = (select.value || '').trim();
       Array.from(select.options).forEach(option => {
-        if(option.value === ''){
-          option.disabled = false;
-          option.hidden = false;
-          return;
-        }
-        if(option.value === current){
-          option.disabled = false;
-          option.hidden = false;
-        } else if(takenNames.has(option.value)){
-          option.disabled = true;
-          option.hidden = true;
-        } else {
-          option.disabled = false;
-          option.hidden = false;
-        }
+        option.disabled = false;
+        option.hidden = false;
       });
     });
   }
@@ -1488,6 +1489,7 @@
   const lineContainer = document.getElementById('lineContainer');
   const addLineBtn = document.getElementById('addLineBtn');
   const resetLinesBtn = document.getElementById('resetLinesBtn');
+  const crossCourtBtn = document.getElementById('crossCourtBtn');
   const dreambreakerToggle = document.getElementById('dreambreakerToggle');
   const dreambreakerFields = document.getElementById('dreambreakerFields');
   const dreambreakerTeam1 = document.getElementById('dreambreakerTeam1');
@@ -1769,6 +1771,38 @@
     addDefaultLines();
   });
 
+  if(crossCourtBtn){
+    crossCourtBtn.addEventListener('click', () => {
+      const rows = Array.from(lineContainer.querySelectorAll('.line-row'));
+      const doublesRows = rows.filter(row => (row.dataset.mode === 'singles' ? 'singles' : 'doubles') === 'doubles');
+      if(doublesRows.length < 4){
+        alert('⚠️ Need at least four doubles courts to fill cross matches.');
+        return;
+      }
+
+      const [court1, court2, court3, court4] = doublesRows;
+      const court1Team1 = getLinePlayers(court1, 1);
+      const court1Team2 = getLinePlayers(court1, 2);
+      const court2Team1 = getLinePlayers(court2, 1);
+      const court2Team2 = getLinePlayers(court2, 2);
+
+      if(court1Team1.length !== 2 || court1Team2.length !== 2 || court2Team1.length !== 2 || court2Team2.length !== 2){
+        alert('⚠️ Complete the pair selections on the first two doubles courts before auto-filling.');
+        return;
+      }
+
+      setLinePlayers(court3, 1, court1Team1);
+      setLinePlayers(court3, 2, court2Team2);
+      setLinePlayers(court4, 1, court2Team1);
+      setLinePlayers(court4, 2, court1Team2);
+
+      enforceUniquePlayers(1);
+      enforceUniquePlayers(2);
+
+      alert('✅ Cross matches filled. Verify the pairings before entering scores.');
+    });
+  }
+
   dreambreakerToggle.addEventListener('change', () => {
     const on = dreambreakerToggle.checked;
     dreambreakerFields.classList.toggle('hidden', !on);
@@ -1781,7 +1815,6 @@
   function collectCourtData(){
     const rows = Array.from(lineContainer.querySelectorAll('.line-row'));
     const lines = [];
-    const usedPlayers = { 1:new Set(), 2:new Set() };
     let total1 = 0, total2 = 0;
     let totalSets1 = 0, totalSets2 = 0;
     for(let i=0; i<rows.length; i++){
@@ -1879,18 +1912,6 @@
           return { ok:false, msg:`${meta2.name} has duplicate players listed on ${label}.` };
         }
       }
-      for(const player of team1Players){
-        if(usedPlayers[1].has(player)){
-          return { ok:false, msg:`${player} is already assigned to another line for ${meta1.name}.` };
-        }
-      }
-      for(const player of team2Players){
-        if(usedPlayers[2].has(player)){
-          return { ok:false, msg:`${player} is already assigned to another line for ${meta2.name}.` };
-        }
-      }
-      team1Players.forEach(player => usedPlayers[1].add(player));
-      team2Players.forEach(player => usedPlayers[2].add(player));
       lines.push({
         label,
         g1: totals.team1,
