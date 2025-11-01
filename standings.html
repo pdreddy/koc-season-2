@@ -433,7 +433,7 @@
         </tbody>
       </table>
     </div>
-    <p class="hint">Sorted by Match Points → Set Differential → Sets Won → Game Differential → Games Won (top 4 highlighted).</p>
+    <p class="hint">Sorted by Match Points → Court Wins → Sets Won → Head-to-Head → Game Differential → Games Won (top 4 highlighted).</p>
   </section>
 
   <!-- Match History -->
@@ -1969,6 +1969,92 @@
     return { team1:s1, team2:s2 };
   }
 
+  function computeMatchLineTotals(match){
+    if(!match || !Array.isArray(match.lines)) return { team1:0, team2:0 };
+    return match.lines.reduce((totals, line) => {
+      if(!line) return totals;
+      const g1 = Number(line.g1);
+      const g2 = Number(line.g2);
+      if(Number.isFinite(g1) && Number.isFinite(g2)){
+        if(g1 > g2){
+          totals.team1 += 1;
+        } else if(g2 > g1){
+          totals.team2 += 1;
+        } else {
+          const sets = deriveLineSetWins(line);
+          if(sets.team1 > sets.team2){
+            totals.team1 += 1;
+          } else if(sets.team2 > sets.team1){
+            totals.team2 += 1;
+          }
+        }
+      }
+      return totals;
+    }, { team1:0, team2:0 });
+  }
+
+  function summarizeHeadToHead(teamA, teamB){
+    if(!teamA || !teamB || teamA === teamB) return null;
+    let matchesBetween = 0;
+    const totals = {
+      a: { points:0, lineWins:0, setsFor:0, gamesFor:0 },
+      b: { points:0, lineWins:0, setsFor:0, gamesFor:0 }
+    };
+    for(const match of matches){
+      if(!match) continue;
+      let perspective = null;
+      if(match.t1 === teamA && match.t2 === teamB){
+        perspective = 'forward';
+      } else if(match.t1 === teamB && match.t2 === teamA){
+        perspective = 'reverse';
+      }
+      if(!perspective) continue;
+      matchesBetween++;
+      const lineTotals = computeMatchLineTotals(match);
+      const setTotals = computeMatchSetTotals(match);
+      if(perspective === 'forward'){
+        if(match.win === teamA) totals.a.points += 1;
+        else if(match.win === teamB) totals.b.points += 1;
+        totals.a.lineWins += lineTotals.team1;
+        totals.b.lineWins += lineTotals.team2;
+        totals.a.setsFor += setTotals.team1;
+        totals.b.setsFor += setTotals.team2;
+        totals.a.gamesFor += Number(match.g1) || 0;
+        totals.b.gamesFor += Number(match.g2) || 0;
+      } else {
+        if(match.win === teamA) totals.a.points += 1;
+        else if(match.win === teamB) totals.b.points += 1;
+        totals.a.lineWins += lineTotals.team2;
+        totals.b.lineWins += lineTotals.team1;
+        totals.a.setsFor += setTotals.team2;
+        totals.b.setsFor += setTotals.team1;
+        totals.a.gamesFor += Number(match.g2) || 0;
+        totals.b.gamesFor += Number(match.g1) || 0;
+      }
+    }
+    if(matchesBetween === 0) return null;
+    totals.matches = matchesBetween;
+    return totals;
+  }
+
+  function compareHeadToHead(teamA, teamB){
+    const summary = summarizeHeadToHead(teamA, teamB);
+    if(!summary) return 0;
+    if(summary.a.points !== summary.b.points){
+      return summary.b.points - summary.a.points;
+    }
+    if(summary.a.lineWins !== summary.b.lineWins){
+      return summary.b.lineWins - summary.a.lineWins;
+    }
+    if(summary.a.setsFor !== summary.b.setsFor){
+      return summary.b.setsFor - summary.a.setsFor;
+    }
+    if(summary.a.gamesFor !== summary.b.gamesFor){
+      return summary.b.gamesFor - summary.a.gamesFor;
+    }
+    return 0;
+  }
+
   function computeStandings(){
     const stats = {};
     TEAMS.forEach(n => stats[n] = {
@@ -1976,6 +2062,8 @@
       matches:0,
       wins:0,
       losses:0,
+      lineWins:0,
+      lineLosses:0,
       setsFor:0,
       setsAgainst:0,
       gamesFor:0,
@@ -1989,6 +2077,9 @@
       // games
       stats[m.t1].gamesFor += m.g1; stats[m.t1].gamesAgainst += m.g2;
       stats[m.t2].gamesFor += m.g2; stats[m.t2].gamesAgainst += m.g1;
+      const lineTotals = computeMatchLineTotals(m);
+      stats[m.t1].lineWins += lineTotals.team1; stats[m.t1].lineLosses += lineTotals.team2;
+      stats[m.t2].lineWins += lineTotals.team2; stats[m.t2].lineLosses += lineTotals.team1;
       const setTotals = computeMatchSetTotals(m);
       stats[m.t1].setsFor += setTotals.team1; stats[m.t1].setsAgainst += setTotals.team2;
       stats[m.t2].setsFor += setTotals.team2; stats[m.t2].setsAgainst += setTotals.team1;
@@ -2003,13 +2094,15 @@
     Object.values(stats).forEach(s => {
       s.setDiff = s.setsFor - s.setsAgainst;
       s.gameDiff = s.gamesFor - s.gamesAgainst;
+      s.lineDiff = s.lineWins - s.lineLosses;
     });
-    // sort: Match points → Set differential → Sets for → Game differential → Games for → Name
+    // sort: Match points → Court wins → Sets for → Head-to-head → Game differential → Games for → Name
     const arr = Object.values(stats)
       .sort((a,b)=>
         (b.points - a.points) ||
-        (b.setDiff - a.setDiff) ||
+        (b.lineWins - a.lineWins) ||
         (b.setsFor - a.setsFor) ||
+        compareHeadToHead(a.team, b.team) ||
         (b.gameDiff - a.gameDiff) ||
         (b.gamesFor - a.gamesFor) ||
         a.team.localeCompare(b.team)
