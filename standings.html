@@ -772,6 +772,15 @@ function enforceUniquePlayers(team){
         continue;
       }
 
+      // Special case for third set (index 2) - allow 1-0 tiebreaker format
+      const isThirdSet = i === 2;
+      if(isThirdSet && ((val1 === 1 && val2 === 0) || (val1 === 0 && val2 === 1))){
+        tieWraps.forEach(w => w.classList.add('hidden'));
+        tieInputs.forEach(input => { if(input.value !== '') input.value = ''; });
+        setsForTotals.push({ set:i + 1, team1:val1, team2:val2 });
+        continue;
+      }
+
       const isTieScore = val1 === val2;
       if(isTieScore){
         if(val1 !== TIE_TRIGGER_GAMES){
@@ -1200,6 +1209,20 @@ function enforceUniquePlayers(team){
       const t2 = Number(entry.team2 ?? entry.t2 ?? entry.b ?? entry.g2 ?? entry.score2);
       if(!Number.isInteger(t1) || !Number.isInteger(t2)) return;
       if(t1 < 0 || t2 < 0 || t1 > MAX_SET_GAMES || t2 > MAX_SET_GAMES) return;
+      
+      let setNumber = Number(entry.set ?? entry.index ?? entry.order ?? entry.num ?? (idx + 1));
+      if(!Number.isInteger(setNumber) || setNumber < 1 || setNumber > 5){
+        setNumber = clean.length + 1;
+      }
+      
+      // Special case for third set (set number 3) - allow 1-0 tiebreaker format
+      const isThirdSet = setNumber === 3;
+      if(isThirdSet && ((t1 === 1 && t2 === 0) || (t1 === 0 && t2 === 1))){
+        const payload = { set:setNumber, team1:t1, team2:t2 };
+        clean.push(payload);
+        return;
+      }
+      
       const isTie = t1 === t2;
       if(isTie){
         if(t1 !== TIE_TRIGGER_GAMES) return;
@@ -1209,10 +1232,7 @@ function enforceUniquePlayers(team){
         if(winnerScore !== MAX_SET_GAMES) return;
         if(loserScore > TIE_TRIGGER_GAMES) return;
       }
-      let setNumber = Number(entry.set ?? entry.index ?? entry.order ?? entry.num ?? (idx + 1));
-      if(!Number.isInteger(setNumber) || setNumber < 1 || setNumber > 5){
-        setNumber = clean.length + 1;
-      }
+      
       const tieBreak = t1 === t2 ? extractTieBreak(entry) : null;
       const payload = { set:setNumber, team1:t1, team2:t2 };
       if(tieBreak) payload.tieBreak = tieBreak;
