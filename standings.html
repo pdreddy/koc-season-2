@@ -458,7 +458,7 @@
     </div>
   </section>
 
-  <!-- Player Participation -->
+  <!-- Player Participation
   <section class="card participation-card">
     <h2>🧑‍🤝‍🧑 Player Participation</h2>
     <p class="hint">Unique match days each player has appeared on. Rows highlight in red once a player reaches six days.</p>
@@ -477,9 +477,9 @@
         </tbody>
       </table>
     </div>
-  </section>
+  </section>-->
 
-  <!-- Pair Usage -->
+  <!-- Pair Usage
   <section class="card pair-usage-card">
     <h2>🎾 Pair Usage</h2>
     <p class="hint">Counts match days for each doubles pairing. Rows highlight in red once a pair reaches three days together.</p>
@@ -498,7 +498,7 @@
         </tbody>
       </table>
     </div>
-  </section>
+  </section>-->
 </main>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -1879,18 +1879,18 @@
           return { ok:false, msg:`${meta2.name} has duplicate players listed on ${label}.` };
         }
       }
-      for(const player of team1Players){
-        if(usedPlayers[1].has(player)){
-          return { ok:false, msg:`${player} is already assigned to another line for ${meta1.name}.` };
-        }
-      }
-      for(const player of team2Players){
-        if(usedPlayers[2].has(player)){
-          return { ok:false, msg:`${player} is already assigned to another line for ${meta2.name}.` };
-        }
-      }
-      team1Players.forEach(player => usedPlayers[1].add(player));
-      team2Players.forEach(player => usedPlayers[2].add(player));
+     // ✅ Allow players/pairs to repeat across different lines
+// Just ensure no duplicate within the same pair
+if (new Set(team1Players).size !== team1Players.length) {
+  return { ok:false, msg:`${meta1.name} has duplicate names in the same line (${label}).` };
+}
+if (new Set(team2Players).size !== team2Players.length) {
+  return { ok:false, msg:`${meta2.name} has duplicate names in the same line (${label}).` };
+}
+
+// Record players (for participation analytics) but don't block reuse
+team1Players.forEach(player => usedPlayers[1].add(player));
+team2Players.forEach(player => usedPlayers[2].add(player));
       lines.push({
         label,
         g1: totals.team1,
