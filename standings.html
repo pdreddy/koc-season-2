@@ -325,6 +325,8 @@
     <a href="index22.html">📅 Schedule</a>
     <a href="rules.html">📋 Rules</a>
     <a href="standings.html" aria-current="page">📊 Standings</a>
+    <a href="playerstats.html">🎾 Matchups</a>
+
   </nav>
 </header>
 
@@ -1209,12 +1211,12 @@ function enforceUniquePlayers(team){
       const t2 = Number(entry.team2 ?? entry.t2 ?? entry.b ?? entry.g2 ?? entry.score2);
       if(!Number.isInteger(t1) || !Number.isInteger(t2)) return;
       if(t1 < 0 || t2 < 0 || t1 > MAX_SET_GAMES || t2 > MAX_SET_GAMES) return;
-      
+
       let setNumber = Number(entry.set ?? entry.index ?? entry.order ?? entry.num ?? (idx + 1));
       if(!Number.isInteger(setNumber) || setNumber < 1 || setNumber > 5){
         setNumber = clean.length + 1;
       }
-      
+
       // Special case for third set (set number 3) - allow 1-0 tiebreaker format
       const isThirdSet = setNumber === 3;
       if(isThirdSet && ((t1 === 1 && t2 === 0) || (t1 === 0 && t2 === 1))){
@@ -1222,7 +1224,7 @@ function enforceUniquePlayers(team){
         clean.push(payload);
         return;
       }
-      
+
       const isTie = t1 === t2;
       if(isTie){
         if(t1 !== TIE_TRIGGER_GAMES) return;
@@ -1232,7 +1234,7 @@ function enforceUniquePlayers(team){
         if(winnerScore !== MAX_SET_GAMES) return;
         if(loserScore > TIE_TRIGGER_GAMES) return;
       }
-      
+
       const tieBreak = t1 === t2 ? extractTieBreak(entry) : null;
       const payload = { set:setNumber, team1:t1, team2:t2 };
       if(tieBreak) payload.tieBreak = tieBreak;
@@ -1801,79 +1803,101 @@ function enforceUniquePlayers(team){
     }
   });
 
-function collectCourtData(){
-    const rows = Array.from(lineContainer.querySelectorAll('.line-row'));
-    const lines = [];
-    let total1 = 0, total2 = 0;
-    let totalSets1 = 0, totalSets2 = 0;
+function collectCourtData() {
+  const rows = Array.from(lineContainer.querySelectorAll('.line-row'));
+  const lines = [];
+  let total1 = 0, total2 = 0;
+  let totalSets1 = 0, totalSets2 = 0;
 
-    for(let i = 0; i < rows.length; i++){
-      const row = rows[i];
-      const labelInput = row.querySelector('.line-label');
-      const label = (labelInput && labelInput.value ? labelInput.value : '').trim() || `Court ${i + 1}`;
-      const mode = row.dataset.mode === 'singles' ? 'singles' : 'doubles';
-      const sets = [];
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const labelInput = row.querySelector('.line-label');
+    const label = (labelInput && labelInput.value ? labelInput.value : '').trim() || `Court ${i + 1}`;
+    const mode = row.dataset.mode === 'singles' ? 'singles' : 'doubles';
+    const sets = [];
 
-      for(let s = 0; s < SET_COUNT; s++){
-        const input1 = row.querySelector(`.set-input[data-team="1"][data-set="${s}"]`);
-        const input2 = row.querySelector(`.set-input[data-team="2"][data-set="${s}"]`);
-        if(!input1 || !input2) continue;
-        const raw1 = input1.value.trim();
-        const raw2 = input2.value.trim();
-        if(raw1 === '' && raw2 === '') continue;
+    // ---- Collect set scores ----
+    for (let s = 0; s < SET_COUNT; s++) {
+      const input1 = row.querySelector(`.set-input[data-team="1"][data-set="${s}"]`);
+      const input2 = row.querySelector(`.set-input[data-team="2"][data-set="${s}"]`);
+      if (!input1 || !input2) continue;
+      const raw1 = input1.value.trim();
+      const raw2 = input2.value.trim();
+      if (raw1 === '' && raw2 === '') continue;
 
-        const val1 = Number(raw1);
-        const val2 = Number(raw2);
-        if(!Number.isInteger(val1) || !Number.isInteger(val2)){
-          return { ok:false, msg:`Set ${s + 1} on ${label} must use whole numbers.` };
+      const val1 = Number(raw1);
+      const val2 = Number(raw2);
+      if (!Number.isInteger(val1) || !Number.isInteger(val2)) {
+        return { ok: false, msg: `Set ${s + 1} on ${label} must use whole numbers.` };
+      }
+
+      // ✅ Determine if this is a super tiebreak
+      const isSuperTB = (mode === 'doubles' && s === 2) || (mode === 'singles' && s === 4);
+
+      if (isSuperTB) {
+        // 🎾 Super tiebreak validation (expect ≥10 points for one side)
+        if ((val1 < 0 || val2 < 0) || (val1 < 10 && val2 < 10)) {
+          return { ok: false, msg: `Set ${s + 1} on ${label} should be a 10-point tiebreak (e.g., 10-8).` };
         }
-        sets.push({ set:s + 1, team1:val1, team2:val2 });
-      }
-
-      if(sets.length === 0) continue;
-      const totals = computeLineTotalsFromSets(sets);
-
-      const team1Players = getLinePlayers(row, 1);
-      const team2Players = getLinePlayers(row, 2);
-      const meta1 = getSelectedTeamMeta(1);
-      const meta2 = getSelectedTeamMeta(2);
-
-      if(mode === 'singles'){
-        if(team1Players.length !== 1) return { ok:false, msg:`Select one singles player for ${meta1.name} on ${label}.` };
-        if(team2Players.length !== 1) return { ok:false, msg:`Select one singles player for ${meta2.name} on ${label}.` };
       } else {
-        if(team1Players.length !== 2) return { ok:false, msg:`Select two doubles players for ${meta1.name} on ${label}.` };
-        if(team2Players.length !== 2) return { ok:false, msg:`Select two doubles players for ${meta2.name} on ${label}.` };
+        // ✅ Normal set validation (0–7 games typical)
+        if ((val1 < 0 || val2 < 0) || (val1 > 7 || val2 > 7)) {
+          return { ok: false, msg: `Set ${s + 1} on ${label} must be between 0 and 7 games.` };
+        }
       }
 
-      // Only check for duplicates within the same line (not across different courts)
-      if(new Set(team1Players).size !== team1Players.length){
-        return { ok:false, msg:`${meta1.name} has the same player listed twice on ${label}.` };
-      }
-      if(new Set(team2Players).size !== team2Players.length){
-        return { ok:false, msg:`${meta2.name} has the same player listed twice on ${label}.` };
-      }
-
-      lines.push({
-        label,
-        g1: totals.team1,
-        g2: totals.team2,
-        sets,
-        type: mode,
-        setWins: { team1:totals.sets1, team2:totals.sets2 },
-        players: { team1:team1Players, team2:team2Players }
-      });
-
-      total1 += totals.team1;
-      total2 += totals.team2;
-      totalSets1 += totals.sets1;
-      totalSets2 += totals.sets2;
+      sets.push({ set: s + 1, team1: val1, team2: val2 });
     }
 
-    if(lines.length === 0) return { ok:false, msg:'Enter at least one valid court score.' };
+    if (sets.length === 0) continue;
+    const totals = computeLineTotalsFromSets(sets);
 
-    return { ok:true, lines, total1, total2, sets1:totalSets1, sets2:totalSets2 };
+    const team1Players = getLinePlayers(row, 1);
+    const team2Players = getLinePlayers(row, 2);
+    const meta1 = getSelectedTeamMeta(1);
+    const meta2 = getSelectedTeamMeta(2);
+
+    // ---- Validate player count per side ----
+    if (mode === 'singles') {
+      if (team1Players.length !== 1)
+        return { ok: false, msg: `Select one singles player for ${meta1.name} on ${label}.` };
+      if (team2Players.length !== 1)
+        return { ok: false, msg: `Select one singles player for ${meta2.name} on ${label}.` };
+    } else {
+      if (team1Players.length !== 2)
+        return { ok: false, msg: `Select two doubles players for ${meta1.name} on ${label}.` };
+      if (team2Players.length !== 2)
+        return { ok: false, msg: `Select two doubles players for ${meta2.name} on ${label}.` };
+    }
+
+    // ✅ Only block duplicates WITHIN the same pair
+    if (new Set(team1Players).size !== team1Players.length)
+      return { ok: false, msg: `${meta1.name} has duplicate names in the same line (${label}).` };
+    if (new Set(team2Players).size !== team2Players.length)
+      return { ok: false, msg: `${meta2.name} has duplicate names in the same line (${label}).` };
+
+    // ✅ Allow repeats across different lines
+    lines.push({
+      label,
+      g1: totals.team1,
+      g2: totals.team2,
+      sets,
+      type: mode,
+      setWins: { team1: totals.sets1, team2: totals.sets2 },
+      players: { team1: team1Players, team2: team2Players },
+    });
+
+    total1 += totals.team1;
+    total2 += totals.team2;
+    totalSets1 += totals.sets1;
+    totalSets2 += totals.sets2;
   }
+
+  if (lines.length === 0)
+    return { ok: false, msg: 'Enter at least one valid court score.' };
+
+  return { ok: true, lines, total1, total2, sets1: totalSets1, sets2: totalSets2 };
+}
 // =========================
 // END PATCH FIX
 // =========================
