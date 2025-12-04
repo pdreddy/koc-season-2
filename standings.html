@@ -523,8 +523,7 @@
   const firebaseApp = firebase.apps && firebase.apps.length ? firebase.app() : firebase.initializeApp(firebaseConfig);
   const auth = firebaseApp.auth();
   const database = firebaseApp.database();
-  const matchesRef = database.ref('season2Matches');
-
+  const matchesRef = database.ref('KOC2DB');
   let authReady = false;
   let authPromise = null;
   let authError = null;
