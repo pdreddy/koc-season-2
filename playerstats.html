@@ -42,7 +42,7 @@
           color:#fff; background:linear-gradient(135deg,var(--bg1),var(--bg2));
         }
 
-        .container{ max-width:1100px; margin:1rem auto 2rem; padding:0 1rem; }
+        .container{ max-width:1200px; margin:1rem auto 2rem; padding:0 1rem; }
         .page-header{
           background:#fff; border-radius:12px; padding:1.25rem 1.5rem; margin-bottom:1rem;
           box-shadow:0 2px 8px rgba(0,0,0,.08); border-left:4px solid var(--accent);
@@ -79,9 +79,9 @@
         table{ width:100%; border-collapse:collapse; background:#fff; border-radius:8px; overflow:hidden; }
         thead th{
           background:linear-gradient(135deg,#0f172a,#1e293b); color:#fff; padding:.85rem;
-          text-align:left; font-weight:600;
+          text-align:left; font-weight:600; font-size:.9rem;
         }
-        tbody td{ padding:.85rem; border-bottom:1px solid var(--ring); }
+        tbody td{ padding:.85rem; border-bottom:1px solid var(--ring); font-size:.9rem; }
         tbody tr:hover{ background:#f8fafc; }
         tbody tr.maxed{ background:linear-gradient(90deg, #fee2e2 0%, #fef2f2 100%); }
 
@@ -94,6 +94,12 @@
         .badge.green{ background:#d1fae5; color:#065f46; }
         .badge.yellow{ background:#fef3c7; color:#92400e; }
         .badge.red{ background:#fee2e2; color:#991b1b; }
+
+        .team-badge{
+          display:inline-block; padding:.2rem .5rem; border-radius:4px;
+          font-size:.75rem; font-weight:600;
+          background:#e0e7ff; color:#3730a3; white-space:nowrap;
+        }
 
         .combo-list{ display:flex; flex-direction:column; gap:.75rem; }
         .combo-card{
@@ -134,7 +140,7 @@
     </div>
     <nav id="siteNav" class="nav" aria-label="Primary">
         <a href="index.html">👥 Teams</a>
-        <a href="index22.html">📅 Schedule</a>
+        <a href="schedule.html">📅 Schedule</a>
         <a href="rules.html">📋 Rules</a>
         <a href="standings.html">📊 Standings</a>
         <a href="playerstats.html" aria-current="page">🎾 Matchups</a>
@@ -160,7 +166,7 @@
         <!-- Player Stats (First Tab - Active by Default) -->
         <div id="players" class="tab-content active">
             <div class="search-bar">
-                <input type="text" id="search-players" placeholder="🔍 Search player..." onkeyup="filter('players')">
+                <input type="text" id="search-players" placeholder="🔍 Search player or team..." onkeyup="filter('players')">
             </div>
             <div class="card">
                 <h2>Complete Player Statistics</h2>
@@ -169,6 +175,7 @@
                         <thead>
                         <tr>
                             <th>Player</th>
+                            <th>Team</th>
                             <th class="center-cell">Match Days</th>
                             <th class="center-cell">Total Courts</th>
                             <th class="center-cell">Courts Won</th>
@@ -187,7 +194,7 @@
         <!-- Singles Cap (Second Tab) -->
         <div id="singles" class="tab-content">
             <div class="search-bar">
-                <input type="text" id="search-singles" placeholder="🔍 Search player..." onkeyup="filter('singles')">
+                <input type="text" id="search-singles" placeholder="🔍 Search player or team..." onkeyup="filter('singles')">
             </div>
             <div class="card">
                 <h2>Singles Match Days Limit Tracker (Cap: 3 match days)</h2>
@@ -196,6 +203,7 @@
                         <thead>
                         <tr>
                             <th>Player</th>
+                            <th>Team</th>
                             <th class="center-cell">Match Days Played</th>
                             <th class="center-cell">Singles Match Days</th>
                             <th class="center-cell">Doubles Courts</th>
@@ -212,7 +220,7 @@
         <!-- Doubles Combos (Third Tab) -->
         <div id="doubles" class="tab-content">
             <div class="search-bar">
-                <input type="text" id="search-doubles" placeholder="🔍 Search combo..." onkeyup="filter('doubles')">
+                <input type="text" id="search-doubles" placeholder="🔍 Search combo or team..." onkeyup="filter('doubles')">
             </div>
             <div class="card">
                 <h2>Doubles Partnerships (Limit: 3 match days)</h2>
@@ -262,8 +270,8 @@
       });
     };
 
-    // Load and process data from Firebase (name-based structure)
-    db.ref('KOC2DB').on('value', (snap) => {
+    // Load and process data from Firebase - automatically build team mapping from database
+    db.ref('KOC2DBPO').on('value', (snap) => {
       const data = snap.val();
       if (!data) {
         document.getElementById('error').textContent = 'No data found';
@@ -274,13 +282,39 @@
 
       const players = {}; // Track all player activity
       const doubles = {};
+      const playerTeamMap = {}; // Automatically build player-to-team mapping
 
-      // Process each match in the database
-      // Data structure is organized by match names (e.g., "CT vs AA", "CoCo vs Karna Crusaders")
+      // First pass: Build the player-to-team mapping from the database
+      Object.entries(data).forEach(([matchName, match]) => {
+        const team1Name = match.t1 || 'Unknown';
+        const team2Name = match.t2 || 'Unknown';
+
+        if (!match.lines) return;
+
+        match.lines.forEach(line => {
+          const t1 = line.players?.team1 || [];
+          const t2 = line.players?.team2 || [];
+
+          // Map team1 players to team1Name
+          t1.forEach(player => {
+            if (!playerTeamMap[player]) {
+              playerTeamMap[player] = team1Name;
+            }
+          });
+
+          // Map team2 players to team2Name
+          t2.forEach(player => {
+            if (!playerTeamMap[player]) {
+              playerTeamMap[player] = team2Name;
+            }
+          });
+        });
+      });
+
+      // Second pass: Process match statistics
       Object.entries(data).forEach(([matchName, match]) => {
         if (!match.lines) return;
 
-        // Use match name as the unique identifier
         const matchIdentifier = matchName;
 
         match.lines.forEach(line => {
@@ -297,13 +331,13 @@
               players[p] = {
                 courtsWon: 0,
                 courtsLost: 0,
-                matchesPlayed: new Set(), // Track unique match names
+                matchesPlayed: new Set(),
                 singlesCount: 0,
-                doublesCount: 0
+                doublesCount: 0,
+                team: playerTeamMap[p] || 'Unknown'
               };
             }
 
-            // Add this match name to player's match list
             players[p].matchesPlayed.add(matchIdentifier);
 
             const playerWon = t1.includes(p) ? t1won : !t1won;
@@ -326,7 +360,12 @@
             [t1, t2].forEach((team, idx) => {
               const key = team.slice().sort().join(' & ');
               if (!doubles[key]) {
-                doubles[key] = { w: 0, l: 0, matchesPlayed: new Set() };
+                doubles[key] = {
+                  w: 0,
+                  l: 0,
+                  matchesPlayed: new Set(),
+                  teams: team.map(p => playerTeamMap[p] || 'Unknown')
+                };
               }
               doubles[key].matchesPlayed.add(matchIdentifier);
 
@@ -349,6 +388,7 @@
     function renderPlayers(data) {
       const arr = Object.entries(data).map(([p, d]) => ({
         p,
+        team: d.team,
         matchesPlayed: d.matchesPlayed.size,
         totalCourts: d.courtsWon + d.courtsLost,
         courtsWon: d.courtsWon,
@@ -364,6 +404,7 @@
         return `
           <tr class="${x.matchesMaxed ? 'maxed' : ''}">
             <td><strong>${x.p}</strong></td>
+            <td><span class="team-badge">${x.team}</span></td>
             <td class="center-cell"><strong>${x.matchesPlayed}</strong></td>
             <td class="center-cell"><strong>${x.totalCourts}</strong></td>
             <td class="center-cell">${x.courtsWon}</td>
@@ -373,13 +414,14 @@
             <td class="center-cell"><span class="badge ${color}">${pct}%</span></td>
           </tr>
         `;
-      }).join('') || '<tr><td colspan="8" class="center-cell" style="color:#718096;">No player data</td></tr>';
+      }).join('') || '<tr><td colspan="9" class="center-cell" style="color:#718096;">No player data</td></tr>';
     }
 
     // Render Singles Cap
     function renderSingles(playersData) {
       const arr = Object.entries(playersData).map(([p, d]) => ({
         p,
+        team: d.team,
         matchesPlayed: d.matchesPlayed.size,
         singlesCount: d.singlesCount,
         doublesCount: d.doublesCount,
@@ -399,6 +441,7 @@
         return `
           <tr class="${rowClass}">
             <td><strong>${x.p}</strong></td>
+            <td><span class="team-badge">${x.team}</span></td>
             <td class="center-cell"><strong>${x.matchesPlayed}</strong></td>
             <td class="center-cell"><strong>${x.singlesCount}</strong>/3</td>
             <td class="center-cell">${x.doublesCount}</td>
@@ -406,13 +449,18 @@
             <td class="center-cell"><span class="badge ${statusColor}">${status}</span></td>
           </tr>
         `;
-      }).join('') || '<tr><td colspan="6" class="center-cell" style="color:#718096;">No player data</td></tr>';
+      }).join('') || '<tr><td colspan="7" class="center-cell" style="color:#718096;">No player data</td></tr>';
     }
 
     // Render Doubles Combos
     function renderDoubles(data) {
       const arr = Object.entries(data).map(([k, d]) => ({
-        k, w: d.w, l: d.l, matchesPlayed: d.matchesPlayed.size, total: d.w + d.l
+        k,
+        w: d.w,
+        l: d.l,
+        matchesPlayed: d.matchesPlayed.size,
+        total: d.w + d.l,
+        teams: [...new Set(d.teams)].join(' / ')
       })).sort((a, b) => {
         const aMax = a.matchesPlayed >= 3;
         const bMax = b.matchesPlayed >= 3;
@@ -427,7 +475,7 @@
         const color = pct >= 60 ? 'green' : pct >= 40 ? 'yellow' : 'red';
         return `
           <div class="combo-card ${maxed ? 'maxed' : ''}">
-            <h3>${x.k} ${maxed ? '<span class="badge red">MAXED</span>' : ''}</h3>
+            <h3>${x.k} <span class="team-badge">${x.teams}</span> ${maxed ? '<span class="badge red">MAXED</span>' : ''}</h3>
             <div class="combo-stats">
               <span>Match Days: <strong>${x.matchesPlayed}</strong>/3</span>
               <span>Courts: <strong>${x.total}</strong></span>
