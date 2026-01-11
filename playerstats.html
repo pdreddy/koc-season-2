@@ -142,7 +142,7 @@
         <a href="index.html">👥 Teams</a>
         <a href="schedule.html">📅 Schedule</a>
         <a href="rules.html">📋 Rules</a>
-        <a href="standings.html">📊 Standings</a>
+        <a href="scorecard.html">📊 Standings</a>
         <a href="playerstats.html" aria-current="page">🎾 Matchups</a>
     </nav>
 </header>
@@ -271,7 +271,7 @@
     };
 
     // Load and process data from Firebase - automatically build team mapping from database
-    db.ref('KOC2DBPO').on('value', (snap) => {
+    db.ref('KOC2DBPONEW').on('value', (snap) => {
       const data = snap.val();
       if (!data) {
         document.getElementById('error').textContent = 'No data found';
