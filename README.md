@@ -62,3 +62,15 @@ npx expo start -c
 
 `expo install --fix` aligns all Expo-related package versions to SDK 54-compatible versions.
 
+
+
+### If you get `Cannot find module 'babel-preset-expo'`
+
+Run a clean reinstall so the Babel preset is installed:
+
+```bash
+rm -rf node_modules package-lock.json
+npm install
+npx expo start -c
+```
+
