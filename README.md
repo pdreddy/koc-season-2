@@ -74,3 +74,17 @@ npm install
 npx expo start -c
 ```
 
+
+
+### If you get `Unable to resolve "firebase/auth/react-native"`
+
+This project now uses `firebase/auth` + AsyncStorage persistence for React Native compatibility.
+
+Run:
+
+```bash
+rm -rf node_modules package-lock.json
+npm install
+npx expo start -c
+```
+
