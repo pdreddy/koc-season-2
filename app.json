@@ -2,6 +2,7 @@
   "expo": {
     "name": "KOC Season 2",
     "slug": "koc-season-2",
+    "scheme": "kocseason2",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
@@ -10,10 +11,15 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.kocseason2.app"
+      "bundleIdentifier": "com.kocseason2.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.kocseason2.app",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#667eea"
       }
