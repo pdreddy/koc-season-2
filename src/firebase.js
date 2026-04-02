@@ -1,6 +1,6 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getDatabase } from 'firebase/database';
-import { getAuth } from 'firebase/auth';
+import { initializeAuth, getAuth } from 'firebase/auth/react-native';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyDbO0eP52i4t3V94bEiDcl7WoKbSrrM9VA',
@@ -14,6 +14,14 @@ const firebaseConfig = {
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 
+let auth;
+
+try {
+  auth = initializeAuth(app);
+} catch {
+  auth = getAuth(app);
+}
+
 export const db = getDatabase(app);
-export const auth = getAuth(app);
+export { auth };
 export const MATCHES_REF = 'KOC2DBPONEW';
