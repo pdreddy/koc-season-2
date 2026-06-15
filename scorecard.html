@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Standings - KOC Season 2</title>
+  <title>Score Entry - KOC Season 2</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     :root{
@@ -78,7 +78,10 @@
     .card-header{ display:flex; justify-content:space-between; align-items:center; gap:.75rem; flex-wrap:wrap; }
     .tools{ display:flex; gap:.5rem; flex-wrap:wrap; }
 
-    .parser-section{ margin-top:1rem; }
+    .entry-grid{ display:grid; grid-template-columns:minmax(0,1.4fr) minmax(280px,.6fr); gap:1rem; align-items:start; margin-top:1rem; }
+    .parser-section{ min-width:0; }
+    .entry-panel{ background:#fff; border:1px solid var(--ring); border-radius:12px; padding:1rem; box-shadow:0 2px 8px rgba(15,23,42,.05); }
+    .entry-panel h3{ font-size:1rem; margin-bottom:.5rem; }
     .parser-textarea{
       width:100%; min-height:220px; padding:1rem; border:2px solid var(--ring); border-radius:8px;
       font-family:monospace; font-size:.9rem; line-height:1.6; resize:vertical;
@@ -86,13 +89,29 @@
     .parser-textarea:focus{ outline:none; border-color:var(--accent); }
     .parser-textarea::placeholder{ color:var(--muted); }
 
-    .preview-section{ margin-top:1rem; padding:1rem; background:#f8fafc; border-radius:8px; border:1px solid var(--ring); }
+    .preview-section{ padding:1rem; background:#f8fafc; border-radius:12px; border:1px solid var(--ring); }
     .preview-section h3{ margin-bottom:.75rem; font-size:1rem; color:var(--ink); }
-    .preview-item{ padding:.5rem .75rem; margin-bottom:.5rem; background:#fff; border-radius:6px; border-left:3px solid var(--accent); font-size:.9rem; }
+    .preview-item{ padding:.6rem .75rem; margin-bottom:.5rem; background:#fff; border-radius:8px; border-left:4px solid var(--accent); font-size:.9rem; box-shadow:0 1px 4px rgba(15,23,42,.04); }
     .preview-item.error{ border-left-color:#ef4444; background:#fef2f2; color:#991b1b; }
+    .preview-item.warning{ border-left-color:#f59e0b; background:#fffbeb; color:#92400e; }
     .preview-item.valid{ border-left-color:#10b981; }
-    .preview-item.total{ border-left-color:#667eea; background:#d1fae5; font-weight:700; }
+    .preview-item.total{ border-left-color:#667eea; background:#eef2ff; font-weight:700; }
     .preview-empty{ color:var(--muted); font-style:italic; }
+
+    .quick-actions{ display:flex; gap:.5rem; flex-wrap:wrap; margin:.75rem 0; }
+    .mini-btn{ border:1px solid var(--ring); background:#fff; color:#334155; border-radius:999px; padding:.4rem .7rem; cursor:pointer; font-weight:700; font-size:.8rem; }
+    .mini-btn:hover{ border-color:var(--accent); color:#0e7490; }
+    .validation-status{ display:flex; gap:.5rem; flex-wrap:wrap; margin:.75rem 0; }
+    .status-pill{ border-radius:999px; padding:.35rem .65rem; font-weight:800; font-size:.78rem; background:#e2e8f0; color:#334155; }
+    .status-pill.good{ background:#dcfce7; color:#166534; }
+    .status-pill.bad{ background:#fee2e2; color:#991b1b; }
+    .status-pill.warn{ background:#fef3c7; color:#92400e; }
+    .roster-panel{ position:sticky; top:6.5rem; }
+    .roster-list{ display:flex; flex-direction:column; gap:.75rem; max-height:520px; overflow:auto; padding-right:.25rem; }
+    .roster-team{ border:1px solid var(--ring); border-radius:10px; padding:.75rem; background:#fff; }
+    .roster-team strong{ display:block; margin-bottom:.45rem; }
+    .player-chips{ display:flex; flex-wrap:wrap; gap:.35rem; }
+    .player-chip{ background:#f1f5f9; border-radius:999px; padding:.25rem .5rem; font-size:.78rem; color:#334155; }
 
     .format-help{ margin-top:1rem; padding:1rem; background:#ecfeff; border-radius:8px; border:1px solid #a5f3fc; }
     .format-help h4{ margin-bottom:.5rem; color:#0e7490; font-size:.9rem; }
@@ -149,6 +168,8 @@
       .tools .btn{ width:100%; }
       .card-header{ flex-direction:column; align-items:flex-start; }
       .tools{ width:100%; }
+      .entry-grid{ grid-template-columns:1fr; }
+      .roster-panel{ position:static; }
     }
 
     @media (max-width:640px){
@@ -180,8 +201,8 @@
 
 <main class="container">
   <section class="page-header">
-    <h1>Tournament Standings</h1>
-    <p>Live rankings and match results (stored securely in Firebase)</p>
+    <h1>Score Entry & Tournament Standings</h1>
+    <p>Paste match results, validate player names against team rosters, and save results securely in Firebase.</p>
   </section>
 
   <section class="card access-card">
@@ -204,26 +225,42 @@
       </div>
     </div>
 
-    <div class="parser-section">
-      <textarea id="scoreInput" class="parser-textarea" placeholder="Paste match results here...
+    <div class="entry-grid">
+      <div class="parser-section entry-panel">
+        <h3>Paste score sheet</h3>
+        <p class="hint">Names are checked against the selected teams' rosters before saving.</p>
+        <div class="quick-actions">
+          <button type="button" class="mini-btn" id="sampleBtn">Load sample</button>
+          <button type="button" class="mini-btn" id="normalizeBtn">Normalize spacing</button>
+        </div>
+        <textarea id="scoreInput" class="parser-textarea" placeholder="Paste match results here...
 
 Example formats (all work):
 SK vs RR
-S: Kanak vs Srini 4-0,4-1,4-1 (won) SK
-D1: KP/Fayaz vs Vasu/Sandeep 2-4, 4-0, 3-4(6-10) (won) RR
-D2: Raja/Uma vs Yogesh/Kalam 4-2, 1-4, 3-4(6-10) (won) RR
+S: Kanak Periasamy vs Yogesh 4-0,4-1,4-1 (won) SK
+D1: KP Krishna/Fayaz vs Vasu Gandhi/Sandeep Gengineri 2-4, 4-0, 3-4(6-10) (won) RR
+D2: Uma V/Rajasekhar Mangalampally vs Charan Macharla/Kalam Shaik 4-2, 1-4, 3-4(6-10) (won) RR
 
 Or with scores on next line:
-S: Kanak vs Srini
+S: Kanak Periasamy vs Yogesh
 4-0,4-1,4-1 (won) SK"></textarea>
-
-      <div id="previewSection" class="preview-section">
-        <h3>📋 Preview</h3>
-        <div id="previewContent" class="preview-empty">Enter scores above to see preview</div>
       </div>
 
-      <div class="format-help">
-        <h4>📖 Format Guide</h4>
+      <aside class="entry-panel roster-panel">
+        <h3>Team rosters</h3>
+        <p class="hint">Use exact names from the two teams in the first line.</p>
+        <div id="rosterList" class="roster-list"></div>
+      </aside>
+    </div>
+
+    <div id="previewSection" class="preview-section" style="margin-top:1rem;">
+      <h3>📋 Validation & Preview</h3>
+      <div id="validationStatus" class="validation-status"></div>
+      <div id="previewContent" class="preview-empty">Enter scores above to see preview</div>
+    </div>
+
+    <div class="format-help">
+      <h4>📖 Format Guide</h4>
         <pre>First line: TEAM1_ABBR vs TEAM2_ABBR (e.g., SK vs RR)
 
 Then each court:
@@ -232,8 +269,7 @@ D/D1/D2/Doubles: Player1/Player2 vs Player3/Player4 scores (won) WINNER
 
 • Tiebreaks: 3-4(6-10) means 3-4 with tiebreak 6-10
 • Scores can be on same line or next line
-• Team abbreviations: SK, RR, KC, KOCC, RS, AA, CT, ML, CC</pre>
-      </div>
+• Team abbreviations: SK, RR, KC, KOCC, RS, AA, CT, ML, COCO</pre>
     </div>
 
     <div class="form-actions">
@@ -256,12 +292,16 @@ D/D1/D2/Doubles: Player1/Player2 vs Player3/Player4 scores (won) WINNER
           <th>Match Wins</th>
           <th>Match Losses</th>
           <th>Sets Won</th>
+          <th>Sets Lost</th>
+          <th>Set Diff</th>
           <th>Games Won</th>
+          <th>Games Lost</th>
+          <th>Game Diff</th>
           <th>Match Points</th>
         </tr>
         </thead>
         <tbody id="standingsBody">
-        <tr><td colspan="8" class="center-cell" style="color:var(--muted);">Loading...</td></tr>
+        <tr><td colspan="12" class="center-cell" style="color:var(--muted);">Loading...</td></tr>
         </tbody>
       </table>
     </div>
@@ -343,6 +383,14 @@ D/D1/D2/Doubles: Player1/Player2 vs Player3/Player4 scores (won) WINNER
   const TEAM_LOOKUP = new Map(TOURNAMENT.teams.map(t => [t.name, t]));
   const ABBR_LOOKUP = new Map(TOURNAMENT.teams.map(t => [t.abbreviation.toUpperCase(), t]));
   const TEAMS = TOURNAMENT.teams.map(t => t.name);
+  const PLAYER_LOOKUP = new Map();
+  TOURNAMENT.teams.forEach(team => {
+    team.players.forEach(player => PLAYER_LOOKUP.set(normalizeName(player), { player, team }));
+  });
+
+  function normalizeName(name){
+    return String(name || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().replace(/\s+/g, ' ');
+  }
 
   const escapeHTML = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -351,9 +399,80 @@ D/D1/D2/Doubles: Player1/Player2 vs Player3/Player4 scores (won) WINNER
   const scoringForm = document.getElementById('scoringForm');
   const scoreInput = document.getElementById('scoreInput');
   const previewContent = document.getElementById('previewContent');
+  const validationStatus = document.getElementById('validationStatus');
+  const rosterList = document.getElementById('rosterList');
 
   let matches = [];
   let matchesLoaded = false;
+
+  function getPlayerMatch(inputName, expectedTeam){
+    const normalized = normalizeName(inputName);
+    if(!normalized) return { ok:false, message:'Blank player name' };
+
+    const exact = PLAYER_LOOKUP.get(normalized);
+    if(exact){
+      if(expectedTeam && exact.team.name !== expectedTeam.name){
+        return { ok:false, message:`${inputName} is on ${exact.team.abbreviation}, not ${expectedTeam.abbreviation}`, suggestion:exact.player };
+      }
+      return { ok:true, player:exact.player, team:exact.team, exact:true };
+    }
+
+    const candidates = expectedTeam ? expectedTeam.players : TOURNAMENT.teams.flatMap(t => t.players);
+    const partial = candidates.find(player => {
+      const p = normalizeName(player);
+      return p.includes(normalized) || normalized.includes(p);
+    });
+    if(partial){
+      return { ok:false, message:`Unknown player "${inputName}". Did you mean "${partial}"?`, suggestion:partial };
+    }
+
+    return { ok:false, message:`Unknown player "${inputName}" for ${expectedTeam ? expectedTeam.abbreviation : 'selected teams'}` };
+  }
+
+  function validateParsedPlayers(results, team1, team2){
+    const errors = [];
+    const warnings = [];
+    const seenByLine = new Set();
+
+    results.forEach(result => {
+      const expectedCounts = result.type === 'singles' ? 1 : 2;
+      if(result.players.team1.length !== expectedCounts || result.players.team2.length !== expectedCounts){
+        errors.push(`${result.label}: expected ${expectedCounts} player${expectedCounts > 1 ? 's' : ''} per side`);
+      }
+
+      [
+        { players: result.players.team1, team: team1 },
+        { players: result.players.team2, team: team2 }
+      ].forEach(side => {
+        side.players.forEach((player, index) => {
+          const match = getPlayerMatch(player, side.team);
+          if(!match.ok){
+            errors.push(`${result.label}: ${match.message}`);
+          } else {
+            if(match.player !== player){
+              warnings.push(`${result.label}: saved as roster name "${match.player}"`);
+            }
+            side.players[index] = match.player;
+          }
+          const key = `${result.label}|${normalizeName(side.players[index])}`;
+          if(seenByLine.has(key)) errors.push(`${result.label}: duplicate player "${side.players[index]}"`);
+          seenByLine.add(key);
+        });
+      });
+    });
+
+    return { errors, warnings };
+  }
+
+  function renderRosters(team1, team2){
+    const teams = team1 && team2 ? [team1, team2] : TOURNAMENT.teams;
+    rosterList.innerHTML = teams.map(team => `
+      <div class="roster-team">
+        <strong>${escapeHTML(team.abbreviation)} · ${escapeHTML(team.name)}</strong>
+        <div class="player-chips">${team.players.map(player => `<span class="player-chip">${escapeHTML(player)}</span>`).join('')}</div>
+      </div>
+    `).join('');
+  }
 
   // ==================== TEXT PARSER ====================
 
@@ -362,7 +481,7 @@ D/D1/D2/Doubles: Player1/Player2 vs Player3/Player4 scores (won) WINNER
     const errors = [];
 
     const rawLines = text.trim().split('\n').map(l => l.trim()).filter(Boolean);
-    if (rawLines.length === 0) return { results: [], errors: [], team1: null, team2: null };
+    if (rawLines.length === 0) return { results: [], errors: [], warnings: [], team1: null, team2: null };
 
     // First line should be "TEAM1 vs TEAM2" (abbreviations)
     let team1 = null, team2 = null;
@@ -399,11 +518,11 @@ D/D1/D2/Doubles: Player1/Player2 vs Player3/Player4 scores (won) WINNER
       }
       if (!team1 || !team2) {
         errors.push('First line should be: TEAM1 vs TEAM2 (e.g., SK vs RR)');
-        return { results: [], errors, team1: null, team2: null };
+        return { results: [], errors, warnings: [], team1: null, team2: null };
       }
     }
 
-    if (!team1 || !team2) return { results: [], errors, team1: null, team2: null };
+    if (!team1 || !team2) return { results: [], errors, warnings: [], team1: null, team2: null };
 
     const team1Abbr = team1.abbreviation.toUpperCase();
     const team2Abbr = team2.abbreviation.toUpperCase();
@@ -445,7 +564,10 @@ D/D1/D2/Doubles: Player1/Player2 vs Player3/Player4 scores (won) WINNER
       }
     }
 
-    return { results, errors, team1, team2 };
+    const playerValidation = validateParsedPlayers(results, team1, team2);
+    errors.push(...playerValidation.errors);
+
+    return { results, errors, warnings: playerValidation.warnings, team1, team2 };
   }
 
   function parseLine(line, team1, team2, team1Abbr, team2Abbr) {
@@ -579,33 +701,41 @@ D/D1/D2/Doubles: Player1/Player2 vs Player3/Player4 scores (won) WINNER
     const text = scoreInput.value;
     if (!text.trim()) {
       previewContent.innerHTML = '<div class="preview-empty">Enter scores above to see preview</div>';
+      validationStatus.innerHTML = '<span class="status-pill">Waiting for input</span>';
+      renderRosters();
       return;
     }
 
-    const { results, errors, team1, team2 } = parseScoreText(text);
+    const { results, errors, warnings, team1, team2 } = parseScoreText(text);
+    renderRosters(team1, team2);
+    validationStatus.innerHTML = `
+      <span class="status-pill ${errors.length ? 'bad' : 'good'}">${errors.length ? 'Errors: ' + errors.length : 'No blocking errors'}</span>
+      <span class="status-pill ${warnings.length ? 'warn' : 'good'}">${warnings.length ? 'Warnings: ' + warnings.length : 'Roster names verified'}</span>
+      <span class="status-pill">Courts: ${results.length}</span>
+    `;
     let html = '';
 
     if (errors.length > 0) {
       html += errors.map(err => `<div class="preview-item error">❌ ${escapeHTML(err)}</div>`).join('');
     }
 
+    if (warnings.length > 0) {
+      html += warnings.map(warn => `<div class="preview-item warning">⚠️ ${escapeHTML(warn)}</div>`).join('');
+    }
+
     if (team1 && team2 && results.length > 0) {
       let totalG1 = 0, totalG2 = 0, totalSets1 = 0, totalSets2 = 0;
-      let courtsWon1 = 0, courtsWon2 = 0;
-
       results.forEach(r => {
         totalG1 += r.g1;
         totalG2 += r.g2;
         totalSets1 += r.sets1;
         totalSets2 += r.sets2;
-        if (r.winnerTeamNum === 1) courtsWon1++;
-        else if (r.winnerTeamNum === 2) courtsWon2++;
       });
 
-      const winner = courtsWon1 > courtsWon2 ? team1.name : (courtsWon2 > courtsWon1 ? team2.name : 'TIE');
+      const winner = totalG1 > totalG2 ? team1.name : (totalG2 > totalG1 ? team2.name : 'TIE');
 
       html += `<div class="preview-item total">
-        📊 ${team1.name} ${totalG1}-${totalG2} ${team2.name} (Sets: ${totalSets1}-${totalSets2}) → Courts Won: ${courtsWon1}-${courtsWon2} → Winner: ${winner}
+        📊 ${team1.name} ${totalG1}-${totalG2} ${team2.name} (Sets: ${totalSets1}-${totalSets2}) → Winner: ${winner}
       </div>`;
 
       results.forEach(r => {
@@ -627,6 +757,19 @@ D/D1/D2/Doubles: Player1/Player2 vs Player3/Player4 scores (won) WINNER
   }
 
   scoreInput.addEventListener('input', updatePreview);
+  document.getElementById('sampleBtn').addEventListener('click', () => {
+    scoreInput.value = `SK vs RR
+S: Kanak Periasamy vs Yogesh 4-0,4-1,4-1 (won) SK
+D1: KP Krishna/Fayaz vs Vasu Gandhi/Sandeep Gengineri 2-4, 4-0, 3-4(6-10) (won) RR
+D2: Uma V/Rajasekhar Mangalampally vs Charan Macharla/Kalam Shaik 4-2, 1-4, 3-4(6-10) (won) RR`;
+    updatePreview();
+  });
+  document.getElementById('normalizeBtn').addEventListener('click', () => {
+    scoreInput.value = scoreInput.value.split('\n').map(line => line.trim().replace(/\s*,\s*/g, ', ').replace(/\s+vs\.?\s+/i, ' vs ')).join('\n');
+    updatePreview();
+  });
+  renderRosters();
+  updatePreview();
 
   // ==================== FIREBASE HANDLERS ====================
 
@@ -692,28 +835,18 @@ D/D1/D2/Doubles: Player1/Player2 vs Player3/Player4 scores (won) WINNER
     if(results.length === 0) return alert('⚠️ No valid scores found.');
 
     let totalG1 = 0, totalG2 = 0, totalSets1 = 0, totalSets2 = 0;
-    let courtsWon1 = 0, courtsWon2 = 0;
-
     results.forEach(r => {
-      totalG1 += r.g1;
-      totalG2 += r.g2;
-      totalSets1 += r.sets1;
-      totalSets2 += r.sets2;
-      if (r.winnerTeamNum === 1) courtsWon1++;
-      else if (r.winnerTeamNum === 2) courtsWon2++;
+      totalG1 += r.g1; totalG2 += r.g2;
+      totalSets1 += r.sets1; totalSets2 += r.sets2;
     });
 
-    const winner = courtsWon1 > courtsWon2 ? team1.name : (courtsWon2 > courtsWon1 ? team2.name : null);
+    const winner = totalG1 > totalG2 ? team1.name : (totalG2 > totalG1 ? team2.name : null);
     if(!winner) return alert('⚠️ Match is tied. Check scores.');
 
-    // MODIFIED: Convert all player names to UPPERCASE before saving
     const lines = results.map(r => ({
       label: r.label, type: r.type, g1: r.g1, g2: r.g2,
       sets: r.sets, setWins: { team1: r.sets1, team2: r.sets2 },
-      players: {
-        team1: r.players.team1.map(p => p.toUpperCase()),
-        team2: r.players.team2.map(p => p.toUpperCase())
-      }
+      players: r.players
     }));
 
     const record = {
@@ -729,7 +862,7 @@ D/D1/D2/Doubles: Player1/Player2 vs Player3/Player4 scores (won) WINNER
       await matchesRef.push(record);
       scoreInput.value = '';
       updatePreview();
-      alert(`✅ Saved: ${team1.name} ${totalG1}-${totalG2} ${team2.name}\nCourts Won: ${courtsWon1}-${courtsWon2}\nWinner: ${winner}`);
+      alert(`✅ Saved: ${team1.name} ${totalG1}-${totalG2} ${team2.name}\nWinner: ${winner}`);
     } catch(err){
       alert('❌ Save failed: ' + err.message);
     }
@@ -814,12 +947,12 @@ D/D1/D2/Doubles: Player1/Player2 vs Player3/Player4 scores (won) WINNER
 
   function renderStandings(){
     if(!matchesLoaded){
-      standingsBody.innerHTML = '<tr><td colspan="8" class="center-cell">Loading...</td></tr>';
+      standingsBody.innerHTML = '<tr><td colspan="12" class="center-cell">Loading...</td></tr>';
       return;
     }
     const rows = computeStandings();
     if(matches.length === 0){
-      standingsBody.innerHTML = '<tr><td colspan="8" class="center-cell" style="color:var(--muted);">No results yet.</td></tr>';
+      standingsBody.innerHTML = '<tr><td colspan="12" class="center-cell" style="color:var(--muted);">No results yet.</td></tr>';
       return;
     }
     standingsBody.innerHTML = rows.map((r,i)=>`
@@ -830,7 +963,11 @@ D/D1/D2/Doubles: Player1/Player2 vs Player3/Player4 scores (won) WINNER
         <td class="center-cell" data-label="Wins">${r.wins}</td>
         <td class="center-cell" data-label="Losses">${r.losses}</td>
         <td class="center-cell" data-label="Sets W">${r.setsFor}</td>
+        <td class="center-cell" data-label="Sets L">${r.setsAgainst}</td>
+        <td class="center-cell" data-label="Set Diff">${r.setDiff}</td>
         <td class="center-cell" data-label="Games W">${r.gamesFor}</td>
+        <td class="center-cell" data-label="Games L">${r.gamesAgainst}</td>
+        <td class="center-cell" data-label="Game Diff">${r.gameDiff}</td>
         <td class="points-cell" data-label="Points">${r.points}</td>
       </tr>
     `).join('');
